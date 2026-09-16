@@ -1,17 +1,30 @@
 # dsh-launcher
 
 Portable launcher toolchain for **DeepSeek Harness** (`deepseek-harness`) on
-Windows. It lets you launch the Web UI from a desktop shortcut that shows a real
-icon, and it lives in its **own repository** so it survives a clean re-clone of
-the upstream repo.
+Windows. It turns the Web UI into a **one-click desktop shortcut with a real
+icon**, so you never have to type the long startup command again.
 
-## Why this exists
+## Why this exists / 初衷
 
-The upstream repo (github.com/deepseek-ai/deepseek-harness) does **not** contain
-any of this tooling. Launch helpers you drop into `scripts/` are your own local
-files: the moment you wipe the checkout and re-clone, they are gone unless you
-keep them somewhere else. This repo is that "somewhere else" — everything here
-is **path-sanitized** and usable on any machine.
+DeepSeek Harness normally starts from a would-be familiar but actually tedious
+invocation — open a terminal, `cd` into your checkout, then run a long command
+with the right flags and environment. That gets old fast, especially after a
+re-clone or on a new machine.
+
+This project is deliberately **not** in the upstream repo. It is a small,
+separate, self-contained layer that only:
+
+- creates a desktop shortcut (with a real icon) that runs DeepSeek Harness;
+- regenerates that icon from an SVG when you need it;
+- restores everything after you re-clone the upstream repo.
+
+It **does not modify, patch, or rebuild DeepSeek Harness core code**. The
+upstream stays untouched and upstream-clean — the launcher only wraps its
+startup. In short: one less thing to type, zero risk to the product.
+
+Because it lives in its **own repository** (not inside the harness checkout),
+re-cloning the harness tree never wipes it: the moment you re-clone, you run
+`deploy.ps1` and the shortcut (and its icon) are back in seconds.
 
 ## Layout
 
