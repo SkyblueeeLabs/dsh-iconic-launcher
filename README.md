@@ -6,10 +6,10 @@ icon**, so you never have to type the long startup command again.
 
 ## Why this exists / 初衷
 
-DeepSeek Harness normally starts from a would-be familiar but actually tedious
-invocation — open a terminal, `cd` into your checkout, then run a long command
-with the right flags and environment. That gets old fast, especially after a
-re-clone or on a new machine.
+DeepSeek Harness normally starts with a familiar but tedious ritual — open a
+terminal, `cd` into your checkout, then run a long command with the right flags
+and environment. That gets old fast, especially after a re-clone or on a new
+machine.
 
 This project is deliberately **not** in the upstream repo. It is a small,
 separate, self-contained layer that only:
