@@ -16,19 +16,22 @@
  * either a preset id or a bounded PNG payload with a real PNG signature — so no
  * unsafe name and no arbitrary content reaches the disk.
  */
-import { mkdir, writeFile } from 'node:fs/promises'
-import { join, isAbsolute } from 'node:path'
+import { mkdir, readdir, rm, writeFile } from 'node:fs/promises'
+import { createHash } from 'node:crypto'
+import { join, isAbsolute, dirname } from 'node:path'
 import { homedir } from 'node:os'
 import z from '@deepseek-ai/schemastery'
 import {
-  ICONIC_PRESETS_ROUTE, ICONIC_INSTALL_ROUTE, MAX_UPLOAD_BASE64,
+  ICONIC_PRESETS_ROUTE, ICONIC_INSTALL_ROUTE, ICONIC_ICON_ROUTE_PREFIX,
+  ICON_SIZES, slugify,
 } from './shared.js'
-import { PRESETS, isPreset, loadPresetIco } from './presets.js'
-import { icoFromPng, isPng } from './ico.js'
+import { PRESET_GROUPS, findPreset, loadPresetIco, listCustomPresets, loadIconFile } from './presets.js'
+import { buildIco, isPng } from './ico.js'
 import { writeShortcut } from './desktop.js'
+import { ICONIC_NS } from './shared.js'
 
 /** Cordis function-plugin name. */
-export const name = 'iconic-launcher'
+export const name = 'dsh-iconic-launcher'
 /** Route carrier, the trust fence guarding every route, and command spawns. */
 export const inject = ['webServer', 'connection', 'subprocess']
 
@@ -50,8 +53,9 @@ export const Config = z.object({
   targetExecutable: nonEmpty(),
   targetArguments: z.string().default(''),
   workingDirectory: z.string().default(''),
-  iconDir: nonEmpty().default(() => join(homedir(), '.dsh-launcher', 'icons')),
-  desktopDir: nonEmpty().default(() => join(homedir(), 'Desktop')),
+  iconDir: nonEmpty().default(join(homedir(), '.dsh-launcher', 'icons')),
+  customDir: z.string().default(''),
+  desktopDir: nonEmpty().default(join(homedir(), 'Desktop')),
   allowUpload: z.boolean().default(true),
 })
 
@@ -65,10 +69,18 @@ function connectionOf(ctx) {
   return Reflect.get(ctx, 'connection')
 }
 
-/** Install bodies are tiny JSON; upload payloads are capped separately. */
-const MAX_JSON_BODY = 2 * 1024
-/** A single written icon payload cap (also bounds the upload base64). */
-const MAX_ICON_BYTES = 4 * 1024 * 1024
+/**
+ * Per-frame PNG ceiling after base64 decoding. A 256px entry is a few hundred
+ * KB at worst; anything larger means the caller is not sending icon frames.
+ */
+const MAX_FRAME_BYTES = 512 * 1024
+/**
+ * Install request-body ceiling. A preset install is a few dozen bytes, but an
+ * upload carries one base64 PNG per `ICON_SIZES` entry, so this single read cap
+ * has to cover the whole set (base64 costs ~4/3, plus JSON scaffolding).
+ * The previous 2 KiB cap made every real upload fail with 413.
+ */
+const MAX_INSTALL_BODY = ICON_SIZES.length * MAX_FRAME_BYTES * 1.4 + 8 * 1024
 
 /** @param {import('node:http').ServerResponse} res */
 /** @param {import('node:http').ServerResponse} res */
@@ -143,26 +155,84 @@ async function ensureDir(dir) {
 }
 
 /**
- * Resolve icon bytes + file base for one install (preset or uploaded PNG).
- * @param {{ preset?: unknown; pngBase64?: unknown; shortcutName?: unknown }} body
- * @param {string} baseName sanitized safe base name
- * @param {boolean} allowUpload whether uploads are allowed
- * @returns {Promise<{ bytes: Buffer; path: string }|null>}
+ * Remove icon files an earlier install of the same shortcut base left behind,
+ * keeping only the one just written. Best-effort: pruning is cosmetic, so it
+ * must never fail an install that already succeeded.
+ * @param {string} dir absolute icon-output directory
+ * @param {string} base sanitized shortcut base name
+ * @param {string} keepName file name to retain
  */
-async function resolveIcon(body, baseName, allowUpload) {
-  if (typeof body === 'object' && body !== null && typeof body.preset === 'string' && isPreset(body.preset)) {
-    return { bytes: await loadPresetIco(body.preset), path: `${baseName}.ico` }
+async function pruneSupersededIcons(dir, base, keepName) {
+  try {
+    const entries = await readdir(dir)
+    const prefix = `${base}.`
+    await Promise.all(entries
+      .filter(name => name !== keepName && name.startsWith(prefix) && name.endsWith('.ico'))
+      .map(name => rm(join(dir, name), { force: true })))
+  } catch {
+    // Ignored on purpose — see above.
   }
-  if (allowUpload && typeof body === 'object' && body !== null && typeof body.pngBase64 === 'string') {
-    if (body.pngBase64.length > MAX_UPLOAD_BASE64) return null
-    let bytes
-    try {
-      bytes = Buffer.from(body.pngBase64, 'base64')
-    } catch {
+}
+
+/**
+ * Resolve the icon bytes for one install (a shipped preset, a kept custom
+ * icon, or an uploaded PNG that becomes a new custom entry).
+ * @param {{ group?: unknown; preset?: unknown; name?: unknown; frames?: unknown; shortcutName?: unknown }} body
+ * @param {boolean} allowUpload whether uploads are allowed
+ * @param {string} customDir absolute custom-icons directory
+ * @returns {Promise<{ bytes: Buffer; customId: string|null }|null>}
+ */
+async function resolveIcon(body, allowUpload, customDir) {
+  if (typeof body === 'object' && body !== null
+    && typeof body.group === 'string' && typeof body.preset === 'string') {
+    if (body.group === 'custom') {
+      const custom = await listCustomPresets(customDir)
+      const preset = custom?.presets.find(p => p.id === body.preset)
+      if (preset !== undefined) {
+        return { bytes: await loadIconFile(preset.file), customId: null }
+      }
       return null
     }
-    if (bytes.length === 0 || bytes.length > MAX_ICON_BYTES || !isPng(bytes)) return null
-    return { bytes: icoFromPng(bytes), path: `${baseName}.ico` }
+    const preset = findPreset(body.group, body.preset)
+    if (preset !== undefined) {
+      return { bytes: await loadPresetIco(preset.file), customId: null }
+    }
+    return null
+  }
+
+  // Upload path: the browser has already knocked out the backdrop, resampled
+  // the artwork and encoded one PNG per ICON_SIZES entry — it owns a canvas,
+  // this process owns no rasterizer. We validate the frames, pack the .ico,
+  // and KEEP it: the packed bytes land in the custom directory so the upload
+  // shows up under the `自定义` tab on every later load.
+  if (allowUpload && typeof body === 'object' && body !== null && Array.isArray(body.frames)) {
+    const rank = new Map(ICON_SIZES.map((size, index) => [size, index]))
+    const seen = new Set()
+    const frames = []
+    for (const frame of body.frames) {
+      if (typeof frame !== 'object' || frame === null) return null
+      const { size, data } = frame
+      if (!rank.has(size) || seen.has(size) || typeof data !== 'string') return null
+      if (data.length > MAX_FRAME_BYTES * 1.4) return null
+      let bytes
+      try {
+        bytes = Buffer.from(data, 'base64')
+      } catch {
+        return null
+      }
+      if (bytes.length === 0 || bytes.length > MAX_FRAME_BYTES || !isPng(bytes)) return null
+      seen.add(size)
+      frames.push({ size, data: bytes })
+    }
+    if (frames.length === 0) return null
+    // The ICO directory reads largest-first; never trust the caller's order.
+    frames.sort((a, b) => rank.get(a.size) - rank.get(b.size))
+    const packed = buildIco(frames)
+    const label = typeof body.name === 'string' && body.name.trim() !== '' ? slugify(body.name).slice(0, 40) : 'icon'
+    const customId = `custom-${label || 'icon'}-${Date.now()}`
+    await ensureDir(customDir)
+    await writeFile(join(customDir, `${customId}.ico`), packed)
+    return { bytes: packed, customId }
   }
   return null
 }
@@ -181,6 +251,24 @@ export function apply(ctx, config) {
     return true
   }
   const workingDirectory = config.workingDirectory || config.desktopDir
+  // Uploaded icons persist here as full multi-size .ico files; the catalog
+  // serves them under the `自定义` tab on every subsequent load.
+  const customDir = config.customDir || join(config.iconDir, 'custom')
+
+  // Serve the settings namespace so the Plugins settings page (which only
+  // dispatches a card for namespace the Host serves) reacts to this bundle.
+  // No UI ever needs to edit the host's own config through this card — the
+  // card's "state" is the icon choice and the last .lnk/icon paths written —
+  // so the schema is deliberately a passthrough the card can contribute to
+  // without owning any real preference.
+  ctx.inject(['settings'], (settingsCtx) => {
+    settingsCtx.settings.register(ICONIC_NS, z.object({
+      iconDir: z.string(),
+      desktopDir: z.string(),
+      lastPreset: z.string(),
+      lastShortcut: z.string(),
+    }))
+  })
 
   ctx.effect(() =>
     ctx.webServer.register({
@@ -192,10 +280,54 @@ export function apply(ctx, config) {
           sendMethodNotAllowed(res, 'GET')
           return
         }
-        sendJson(res, 200, { presets: PRESETS, iconDir: config.iconDir })
+        // The custom tab is directory-backed and always present: whatever the
+        // user uploaded shows up newest-first, and an empty directory just
+        // leaves the tab with its add-placeholder.
+        const custom = await listCustomPresets(customDir)
+        sendJson(res, 200, { groups: [...PRESET_GROUPS, custom], iconDir: config.iconDir })
       },
     }),
   `iconic: GET ${ICONIC_PRESETS_ROUTE}`)
+
+  ctx.effect(() =>
+    ctx.webServer.register({
+      kind: 'prefix',
+      path: ICONIC_ICON_ROUTE_PREFIX,
+      handler: async (req, res) => {
+        if (rejected(req, res)) return
+        if (req.method !== 'GET') {
+          sendMethodNotAllowed(res, 'GET')
+          return
+        }
+        const rest = String(req.url ?? '').slice(ICONIC_ICON_ROUTE_PREFIX.length)
+        const [group, presetId] = decodeURIComponent((rest.split('?')[0] ?? '').replace(/^\/+/, '')).split('/')
+        let iconBytes = null
+        if (group === 'custom' && presetId !== undefined && /^[A-Za-z0-9._-]+$/.test(presetId)) {
+          // Custom entries live as loose .ico files; the id IS the file name.
+          try {
+            iconBytes = await loadIconFile(join(customDir, `${presetId}.ico`))
+          } catch { iconBytes = null }
+        } else if (group !== undefined && presetId !== undefined) {
+          const preset = findPreset(group, presetId)
+          if (preset !== undefined) iconBytes = await loadPresetIco(preset.file)
+        }
+        if (iconBytes === null) {
+          res.statusCode = 404
+          res.end()
+          return
+        }
+        try {
+          res.statusCode = 200
+          res.setHeader('content-type', 'image/x-icon')
+          res.setHeader('cache-control', 'public, max-age=86400')
+          res.end(iconBytes)
+        } catch {
+          res.statusCode = 500
+          res.end()
+        }
+      },
+    }),
+  `iconic: GET ${ICONIC_ICON_ROUTE_PREFIX}<preset>`)
 
   ctx.effect(() =>
     ctx.webServer.register({
@@ -214,7 +346,7 @@ export function apply(ctx, config) {
         }
         let text
         try {
-          text = await readBoundedBody(req, MAX_JSON_BODY)
+          text = await readBoundedBody(req, MAX_INSTALL_BODY)
         } catch {
           sendJson(res, 400, { code: 'bad-request', message: 'request body unreadable' })
           return
@@ -241,7 +373,7 @@ export function apply(ctx, config) {
         }
         let icon = null
         try {
-          icon = await resolveIcon(body, base, config.allowUpload)
+          icon = await resolveIcon(body, config.allowUpload, customDir)
         } catch {
           icon = null
         }
@@ -249,12 +381,31 @@ export function apply(ctx, config) {
           sendJson(res, 400, { code: 'bad-request', message: 'no valid preset or upload provided' })
           return
         }
-        const iconPath = join(config.iconDir, icon.path)
+        // Content-addressed icon file name. Windows' icon cache is keyed by
+        // PATH: overwriting `<name>.ico` in place keeps the OLD bitmap on the
+        // desktop even though the shortcut's IconLocation already points at the
+        // new bytes (Explorer's properties dialog reads the file directly, which
+        // is why it shows the new icon immediately). A fresh path per content
+        // makes the cache miss; superseded files are pruned right after.
+        const stamp = createHash('sha256').update(icon.bytes).digest('hex').slice(0, 10)
+        const iconName = `${base}.${stamp}.ico`
+        const iconPath = join(config.iconDir, iconName)
         const lnkPath = join(config.desktopDir, `${base}.lnk`)
         try {
           await writeFile(iconPath, icon.bytes)
         } catch {
           sendJson(res, 500, { code: 'icon-write', message: 'could not write icon file' })
+          return
+        }
+        await pruneSupersededIcons(config.iconDir, base, iconName)
+        // `WScript.Shell.CreateShortcut` creates a missing .lnk on Save, but it
+        // cannot create the *directory* — a redirected or renamed Desktop
+        // (OneDrive, localized profiles) would fail the write with a bare
+        // "shortcut write failed". Make sure the folder exists first.
+        try {
+          await ensureDir(dirname(lnkPath))
+        } catch {
+          sendJson(res, 500, { code: 'desktop-dir', message: 'desktop directory unavailable' })
           return
         }
         try {
@@ -269,7 +420,9 @@ export function apply(ctx, config) {
           sendJson(res, 502, { code: 'shortcut-failed', message: `failed to write shortcut: ${cause.message}` })
           return
         }
-        sendJson(res, 200, { ok: true, lnkPath, iconPath })
+        // `customId` echoes back on uploads so the picker can select the fresh
+        // entry right after its catalog refresh.
+        sendJson(res, 200, { ok: true, lnkPath, iconPath, customId: icon.customId })
       },
     }),
   `iconic: POST ${ICONIC_INSTALL_ROUTE}`)

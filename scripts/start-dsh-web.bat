@@ -4,7 +4,7 @@ setlocal EnableExtensions
 rem ============================================================
 rem  DeepSeek Harness - dsh web launcher (portable)
 rem
-rem  Part of the "dsh-launcher" local toolset (MIT). This script is
+rem  Part of the "dsh-iconic-launcher" local toolset (MIT). This script is
 rem  intentionally free of machine-specific paths:
 rem    - The repository root is derived from this file's own location.
 rem    - Node is located on PATH first, then common install dirs.

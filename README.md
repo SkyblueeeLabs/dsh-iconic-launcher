@@ -1,4 +1,4 @@
-# dsh-launcher
+# dsh-iconic-launcher
 
 Portable launcher toolchain for **DeepSeek Harness** (`deepseek-harness`) on
 Windows. It turns the Web UI into a **one-click desktop shortcut with a real
@@ -38,7 +38,7 @@ re-cloning the harness tree never wipes it: the moment you re-clone, you run
 | `scripts/SETUP-SHORTCUT.md` | Full setup / troubleshooting notes. |
 | `deploy.ps1` | One-shot restore: copies `scripts/` back into a DeepSeek Harness checkout and refreshes the shortcut. |
 | `install.ps1` | One-shot install for a new user: build a fresh `deepseek-harness` checkout, generate the icon, create the shortcut. |
-| `plugin/` | **`@dsh-launcher/iconic`** — a Cordis bundle that puts "pick or upload a desktop shortcut icon" on the web UI (host half). |
+| `plugin/` | **`dsh-iconic-launcher`** — a Cordis bundle that puts "pick or upload a desktop shortcut icon" on the web UI (host half). |
 | `data/` | PNG icon source material (also usable as extra presets via the plugin). |
 
 ## Quick use

@@ -1,5 +1,5 @@
 node_modules/
 *.log
 .DS_Store
-# runtime artifacts written by the plugin at install time
-.dsh-launcher/
+# local backup of superseded preset icons (kept out of the repo on purpose)
+data/_removed-presets/

@@ -1,8 +1,9 @@
 - insert:
-    - id: dsh-launcher-iconic
-      name: '@dsh-launcher/iconic'
+    - id: dsh-iconic-launcher
+      name: 'dsh-iconic-launcher'
       config:
         shortcutName: DeepSeek Harness
-        command: ''
-        iconDir: ''
+        targetExecutable: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
+        targetArguments: >-
+          -NoProfile -NonInteractive -Command "dsh web"
         allowUpload: true

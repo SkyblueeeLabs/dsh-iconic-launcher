@@ -1,7 +1,7 @@
 {
-  "name": "@dsh-launcher/iconic",
+  "name": "dsh-iconic-launcher",
   "version": "0.1.0",
-  "description": "Host half of the custom desktop icon launcher: preset icons plus arbitrary-image to .ico desktop-shortcut creation",
+  "description": "Custom desktop icon launcher: preset icons plus arbitrary-image to .ico desktop-shortcut creation, with a hosted settings card (host + browser halves)",
   "private": true,
   "type": "module",
   "main": "index.js",
@@ -10,6 +10,10 @@
     ".": {
       "types": "./index.d.ts",
       "default": "./index.js"
+    },
+    "./client": {
+      "types": "./client.d.ts",
+      "default": "./client.js"
     },
     "./shared": {
       "types": "./shared.d.ts",
@@ -20,20 +24,31 @@
   "files": [
     "index.js",
     "index.d.ts",
+    "client.js",
+    "client.d.ts",
     "shared.js",
     "shared.d.ts",
     "ico.js",
     "ico.d.ts",
     "desktop.js",
     "desktop.d.ts",
+    "shortcut.ps1",
     "presets/*.js",
     "presets/*.d.ts",
     "presets/assets",
+    "presets.js",
+    "presets.d.ts",
     "cordis.patch.yml"
   ],
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-settings-plugins"
+      ],
+      "platform": "web"
     }
   },
   "peerDependencies": {
