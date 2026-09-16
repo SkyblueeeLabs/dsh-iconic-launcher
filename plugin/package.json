@@ -1,0 +1,46 @@
+{
+  "name": "@dsh-launcher/iconic",
+  "version": "0.1.0",
+  "description": "Host half of the custom desktop icon launcher: preset icons plus arbitrary-image to .ico desktop-shortcut creation",
+  "private": true,
+  "type": "module",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./shared": {
+      "types": "./shared.d.ts",
+      "default": "./shared.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "shared.js",
+    "shared.d.ts",
+    "ico.js",
+    "ico.d.ts",
+    "desktop.js",
+    "desktop.d.ts",
+    "presets/*.js",
+    "presets/*.d.ts",
+    "presets/assets",
+    "cordis.patch.yml"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "^0.1.6"
+  },
+  "devDependencies": {
+    "@deepseek-ai/cordis": "0.1.6"
+  },
+  "license": "MIT"
+}

@@ -1,0 +1,5 @@
+node_modules/
+*.log
+.DS_Store
+# runtime artifacts written by the plugin at install time
+.dsh-launcher/

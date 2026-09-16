@@ -38,6 +38,8 @@ re-cloning the harness tree never wipes it: the moment you re-clone, you run
 | `scripts/SETUP-SHORTCUT.md` | Full setup / troubleshooting notes. |
 | `deploy.ps1` | One-shot restore: copies `scripts/` back into a DeepSeek Harness checkout and refreshes the shortcut. |
 | `install.ps1` | One-shot install for a new user: build a fresh `deepseek-harness` checkout, generate the icon, create the shortcut. |
+| `plugin/` | **`@dsh-launcher/iconic`** — a Cordis bundle that puts "pick or upload a desktop shortcut icon" on the web UI (host half). |
+| `data/` | PNG icon source material (also usable as extra presets via the plugin). |
 
 ## Quick use
 
@@ -60,6 +62,12 @@ re-cloning the harness tree never wipes it: the moment you re-clone, you run
 powershell -ExecutionPolicy Bypass -File ./scripts/generate-icon.ps1
 powershell -ExecutionPolicy Bypass -File ./scripts/create-desktop-shortcut.ps1
 ```
+
+### Custom desktop shortcut icon plugin (web UI)
+
+The `plugin/` bundle adds a "pick or upload a desktop shortcut icon" capability
+that runs inside the DeepSeek Harness web app. See [`plugin/README.md`](plugin/README.md)
+for routes, config, and current status.
 
 ## Requirements
 

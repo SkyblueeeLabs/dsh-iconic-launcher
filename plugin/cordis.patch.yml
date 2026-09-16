@@ -1,0 +1,8 @@
+- insert:
+    - id: dsh-launcher-iconic
+      name: '@dsh-launcher/iconic'
+      config:
+        shortcutName: DeepSeek Harness
+        command: ''
+        iconDir: ''
+        allowUpload: true
