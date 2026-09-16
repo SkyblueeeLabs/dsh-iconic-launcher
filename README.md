@@ -38,7 +38,7 @@ re-cloning the harness tree never wipes it: the moment you re-clone, you run
 | `scripts/SETUP-SHORTCUT.md` | Full setup / troubleshooting notes. |
 | `deploy.ps1` | One-shot restore: copies `scripts/` back into a DeepSeek Harness checkout and refreshes the shortcut. |
 | `install.ps1` | One-shot install for a new user: build a fresh `deepseek-harness` checkout, generate the icon, create the shortcut. |
-| `plugin/` | **`dsh-iconic-launcher`** — a Cordis bundle that puts "pick or upload a desktop shortcut icon" on the web UI (host half). |
+| repo root | **`dsh-iconic-launcher`** — the DSH plugin itself (host half + browser settings card): pick or upload a desktop shortcut icon, auto backdrop-removal, multi-size ICO, one-click `.lnk` write. |
 | `data/` | PNG icon source material (also usable as extra presets via the plugin). |
 
 ## Quick use
@@ -65,9 +65,16 @@ powershell -ExecutionPolicy Bypass -File ./scripts/create-desktop-shortcut.ps1
 
 ### Custom desktop shortcut icon plugin (web UI)
 
-The `plugin/` bundle adds a "pick or upload a desktop shortcut icon" capability
-that runs inside the DeepSeek Harness web app. See [`plugin/README.md`](plugin/README.md)
-for routes, config, and current status.
+The repo root **is** the plugin package (`dsh-iconic-launcher`) — install it with:
+
+```powershell
+dsh plugin --profile <name> add github:SkyblueeeLabs/dsh-iconic-launcher
+```
+
+It adds a "pick or upload a desktop shortcut icon" capability that runs inside
+the DeepSeek Harness web app. See [`docs/plugin.md`](docs/plugin.md) for routes,
+config, and current status. The `scripts/` and `data/` folders are development
+tooling and source material — they are not part of the installed package.
 
 ## Requirements
 
