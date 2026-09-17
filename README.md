@@ -4,6 +4,21 @@ Portable launcher toolchain for **DeepSeek Harness** (`deepseek-harness`) on
 Windows. It turns the Web UI into a **one-click desktop shortcut with a real
 icon**, so you never have to type the long startup command again.
 
+## Preview / 预览
+
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <img src="assets/screenshots/1-default.png" width="100%" alt="Settings page · default group">
+      <br><sub>设置页首页（顶部项目信息 + 默认分组）</sub>
+    </td>
+    <td align="center" width="50%">
+      <img src="assets/screenshots/2-lightblue.png" width="100%" alt="Lightblue group">
+      <br><sub>浅蓝分组（16 个预设图标）</sub>
+    </td>
+  </tr>
+</table>
+
 ## Why this exists / 初衷
 
 DeepSeek Harness normally starts with a familiar but tedious ritual — open a
