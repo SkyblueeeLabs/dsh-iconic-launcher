@@ -31,8 +31,14 @@ window.__ModuleLoader__.load({
     const ICONIC_NS = 'dsh-launcher-icon'
     const ICONIC_PRESETS_ROUTE = '/dsh-launcher-ic/presets'
     const ICONIC_INSTALL_ROUTE = '/dsh-launcher-ic/install'
+    const ICONIC_CUSTOM_DELETE_ROUTE = '/dsh-launcher-ic/custom-delete'
     const ICONIC_ICON_ROUTE_PREFIX = '/dsh-launcher-ic/icon'
     const MAX_UPLOAD_BASE64 = 1024 * 1024
+    /* Project footer fallback — the host normally supplies these via the
+       presets `meta`, read from its own package.json; these only cover a
+       pre-meta host or a failed field, so the footer is never blank. */
+    const PLUGIN_REPO_FALLBACK = 'https://github.com/SkyblueeeLabs/dsh-iconic-launcher'
+    const PLUGIN_VERSION_FALLBACK = '0.1.1'
 
     /** A PNG File as base64 with any data-URL prefix stripped. */
     /** Resolutions every icon carries, matching the host's ICO packing order. */
@@ -159,7 +165,7 @@ window.__ModuleLoader__.load({
 .ic-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-rows:1fr;
   gap:8px}
 .ic-tile{display:flex !important;flex-direction:column !important;align-items:center;justify-content:flex-start;
-  gap:6px;padding:10px 6px;min-height:78px;text-align:center;
+  gap:6px;padding:10px 6px;min-height:78px;text-align:center;position:relative;
   border:1px solid var(--dsh-border, rgba(128,128,128,.4));border-radius:10px;
   cursor:pointer;background:transparent;color:inherit;font:inherit;
   transition:border-color .12s ease, background .12s ease}
@@ -168,6 +174,14 @@ window.__ModuleLoader__.load({
 .ic-tile-disabled{opacity:.5;cursor:default}
 .ic-thumb{width:36px;height:36px;display:block;flex:0 0 auto}
 .ic-name{font-size:11px;line-height:1.25;word-break:break-word}
+.ic-tile-del{position:absolute;top:5px;right:5px;width:19px;height:19px;padding:0;
+  display:flex;align-items:center;justify-content:center;line-height:1;font-size:14px;
+  border:1px solid var(--dsh-border, rgba(128,128,128,.4));border-radius:50%;
+  background:var(--dsh-surface, rgba(128,128,128,.14));color:inherit;cursor:pointer;opacity:.55;
+  transition:opacity .12s ease, border-color .12s ease, color .12s ease, background .12s ease}
+.ic-tile:hover .ic-tile-del,.ic-tile.ic-selected .ic-tile-del{opacity:1}
+.ic-tile-del:hover{border-color:var(--dsh-danger, #d43545);color:var(--dsh-danger, #d43545)}
+.ic-tile-del.ic-tile-del-armed{opacity:1;background:var(--dsh-danger, #d43545);border-color:var(--dsh-danger, #d43545);color:#fff}
 .ic-hint{opacity:.6;font-size:12px;margin:0}
 .ic-add{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:3px;min-height:78px;padding:10px 6px;text-align:center;
@@ -180,17 +194,33 @@ window.__ModuleLoader__.load({
 .ic-add-text{font-size:12px;font-weight:500}
 .ic-add-req{font-size:11px;opacity:.6}
 .ic-add-hint{font-size:10px;opacity:.45}
-.ic-confirm{display:flex;align-items:center;gap:10px;padding:9px 10px 9px 12px;
+.ic-confirm{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:10px;
+  padding:9px 10px 9px 12px;
   border:1px solid var(--dsh-border, rgba(128,128,128,.4));border-radius:10px}
-.ic-confirm-thumb{width:32px;height:32px;display:block;flex:0 0 auto}
-.ic-confirm-name{flex:1;min-width:0;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ic-confirm-none{flex:1;min-width:0;font-size:12px;opacity:.6}
+.ic-confirm-slot{width:32px;display:flex;align-items:center;flex:0 0 auto}
+.ic-confirm-thumb{width:32px;height:32px;display:block}
+.ic-confirm-mid{min-width:0;text-align:center;font-size:13px;margin:0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ic-mid-ok{color:var(--dsh-success, #2f9e44);font-size:12px}
+.ic-mid-err{color:var(--dsh-danger, #d43545);font-size:12px}
+.ic-confirm-name{font-size:13px}
+.ic-confirm-none{font-size:12px;opacity:.6}
 .ic-actions{display:flex;flex-direction:column;align-items:flex-start;gap:6px}
 .ic-install{border:0;border-radius:8px;padding:7px 16px;cursor:pointer;font-size:12px;font-weight:500;
   background:var(--dsh-accent, #4d90d2);color:#fff;flex:0 0 auto}
 .ic-install:disabled{opacity:.45;cursor:default}
 .ic-error{color:var(--dsh-danger, #d43545);font-size:12px;margin:0;word-break:break-all}
 .ic-ok{color:var(--dsh-success, #2f9e44);font-size:12px;margin:0;word-break:break-all}
+.ic-head{display:flex;flex-direction:column;gap:6px;padding-bottom:12px;
+  border-bottom:1px solid var(--dsh-border, rgba(128,128,128,.25))}
+.ic-head-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ic-head-icon{width:18px;height:18px;flex:0 0 auto;opacity:.85;color:var(--dsh-accent, #4a90d2)}
+.ic-head-name{font-size:15px;font-weight:700}
+.ic-head-sub{display:inline-flex;align-items:baseline;gap:6px;font-size:12px;opacity:.6}
+.ic-head-ver{font-variant-numeric:tabular-nums}
+.ic-head-desc{font-size:12px;opacity:.72;margin:0;line-height:1.55}
+.ic-head-repo{color:var(--dsh-accent, #4a90d2);text-decoration:none;font-size:12px}
+.ic-head-repo:hover{text-decoration:underline}
 `
 
     /**
@@ -201,7 +231,7 @@ window.__ModuleLoader__.load({
      * @param {object} p - catalog + handlers from the live controller state.
      */
     function IconicCard(p) {
-      const { groups, tab, selectedKey, uploadedName, error, result, busy } = p
+      const { groups, tab, selectedKey, uploadedName, error, result, busy, pendingDelete, meta } = p
 
       /** One icon cell; `selectedKey` is `group/id`. */
       const tile = (groupId, preset) => {
@@ -231,7 +261,27 @@ window.__ModuleLoader__.load({
           width: 36,
           height: 36,
         }),
-        React.createElement('span', { className: 'ic-name' }, preset.name))
+        React.createElement('span', { className: 'ic-name' }, preset.name),
+        // Custom uploads are the only removable entries. Two-tap inline confirm
+        // (rather than window.confirm, which embedded webviews often suppress):
+        // the first tap arms this tile's button, the second deletes it.
+        groupId === 'custom' ? (() => {
+          const armed = pendingDelete === key
+          return React.createElement('button', {
+            type: 'button',
+            className: 'ic-tile-del' + (armed ? ' ic-tile-del-armed' : ''),
+            title: armed ? '再次点击确认删除' : '删除该自定义图标',
+            'aria-label': (armed ? '确认删除 ' : '删除 ') + preset.name,
+            disabled: busy,
+            onClick: (event) => {
+              event.stopPropagation()
+              if (!busy) p.onDelete(key, preset.id)
+            },
+            onKeyDown: (event) => {
+              if (event.key === 'Enter' || event.key === ' ') event.stopPropagation()
+            },
+          }, armed ? '✓' : '×')
+        })() : null)
       }
 
       const tabs = Array.isArray(groups) && groups.length > 0
@@ -274,12 +324,6 @@ window.__ModuleLoader__.load({
           active.presets.map(preset => tile(active.id, preset)))
         : React.createElement('p', { className: 'ic-hint' }, '正在加载图标…')
 
-      const status = error
-        ? React.createElement('p', { className: 'ic-error', role: 'status' }, error)
-        : result
-          ? React.createElement('p', { className: 'ic-ok', role: 'status' }, result)
-          : null
-
       // The confirm bar: whatever tile is selected shows up here with its live
       // thumbnail, so "write to desktop" always names exactly what it writes.
       const selInfo = (() => {
@@ -292,34 +336,79 @@ window.__ModuleLoader__.load({
         return group && preset ? { group, preset } : null
       })()
 
+      // One message column, placed to the LEFT of the button (the bar's centre
+      // grid track). It used to trail the button, so surfacing "已写入：<path>"
+      // grew the row's right side and shoved the button sideways on every write.
+      // Now the button owns a fixed right track and this text just centres itself.
+      const mid = error
+        ? React.createElement('p', { className: 'ic-confirm-mid ic-mid-err', role: 'status' }, error)
+        : result
+          ? React.createElement('p', { className: 'ic-confirm-mid ic-mid-ok', role: 'status' }, result)
+          : selInfo
+            ? React.createElement('span', { className: 'ic-confirm-mid' },
+              `${selInfo.group.name} · ${selInfo.preset.name}`)
+            : React.createElement('span', { className: 'ic-confirm-mid ic-confirm-none' },
+              p.frames !== null
+                ? `已处理：${uploadedName ?? '图片'}，点写入保存到自定义并写桌面`
+                : '从上方选一个图标')
+
+      const repoUrl = (meta && meta.homepage) || PLUGIN_REPO_FALLBACK
+      const version = (meta && meta.version) || PLUGIN_VERSION_FALLBACK
+      const projId = (meta && meta.name) || 'dsh-iconic-launcher'
+
       return React.createElement('div', { className: 'ic-card' },
+        // Identity header — what this plugin is, what it does, its version and
+        // where it lives. Version + homepage come from the host (its own
+        // package.json, delivered via presets `meta`), so the header always
+        // matches the installed build; the inlined constants cover a pre-meta host.
+        React.createElement('div', { className: 'ic-head' },
+          React.createElement('div', { className: 'ic-head-row' },
+            React.createElement('svg', {
+              className: 'ic-head-icon', viewBox: '0 0 24 24', fill: 'none',
+              stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round',
+              strokeLinejoin: 'round', 'aria-hidden': 'true',
+            },
+            React.createElement('rect', { x: 3, y: 3, width: 18, height: 18, rx: 2, ry: 2 }),
+            React.createElement('circle', { cx: 8.5, cy: 8.5, r: 1.5 }),
+            React.createElement('path', { d: 'M21 15l-5-5L5 21' })),
+            React.createElement('span', { className: 'ic-head-name' }, '万图皆 icon'),
+            React.createElement('span', { className: 'ic-head-sub' },
+              React.createElement('span', null, projId),
+              React.createElement('span', { className: 'ic-head-ver' }, 'v' + version))),
+          React.createElement('p', { className: 'ic-head-desc' },
+            '为 DeepSeek Harness 生成桌面快捷方式图标：选一个预设、或上传任意图片，自动去白底、切多尺寸 ICO，一键写到桌面。 ',
+            React.createElement('a', {
+              className: 'ic-head-repo',
+              href: repoUrl,
+              target: '_blank',
+              rel: 'noreferrer noopener',
+              title: repoUrl,
+            }, '项目主页 ↗'))),
         React.createElement('p', { className: 'ic-section-title' }, '选择一个图标，然后写入桌面快捷方式'),
         tabs,
         panel,
         React.createElement('div', { className: 'ic-confirm' + (selInfo ? '' : ' ic-confirm-empty') },
-          selInfo
-            ? React.createElement('img', {
-              className: 'ic-confirm-thumb',
-              src: `${ICONIC_ICON_ROUTE_PREFIX}/${encodeURIComponent(selInfo.group.id)}/${encodeURIComponent(selInfo.preset.id)}`,
-              alt: '',
-              width: 32,
-              height: 32,
-            })
-            : null,
-          selInfo
-            ? React.createElement('span', { className: 'ic-confirm-name' },
-              `${selInfo.group.name} · ${selInfo.preset.name}`)
-            : React.createElement('span', { className: 'ic-confirm-none' },
-              p.frames !== null
-                ? `已处理：${uploadedName ?? '图片'}，点写入保存到自定义并写桌面`
-                : '从上方选一个图标'),
+          // Track 1: the live thumbnail of the current choice (empty slot keeps
+          // the centred text aligned whether or not something is selected).
+          React.createElement('span', { className: 'ic-confirm-slot' },
+            selInfo
+              ? React.createElement('img', {
+                className: 'ic-confirm-thumb',
+                src: `${ICONIC_ICON_ROUTE_PREFIX}/${encodeURIComponent(selInfo.group.id)}/${encodeURIComponent(selInfo.preset.id)}`,
+                alt: '',
+                width: 32,
+                height: 32,
+              })
+              : null),
+          // Track 2: status/name/hint, centred — never to the right of the button.
+          mid,
+          // Track 3: the action, pinned right so it stays put when text changes.
           React.createElement('button', {
             type: 'button',
             className: 'ic-install',
             disabled: busy || (!selInfo && p.frames === null),
             onClick: p.onInstall,
-          }, busy ? '处理中…' : '写入桌面'),
-          status))
+          }, busy ? '处理中…' : '写入桌面')))
     }
 
     /**
@@ -333,6 +422,8 @@ window.__ModuleLoader__.load({
         tab: null,
         selectedKey: null,
         uploadedName: null,
+        pendingDelete: null,
+        meta: null,
         error: null,
         result: null,
         busy: false,
@@ -349,6 +440,7 @@ window.__ModuleLoader__.load({
             setState(prev => ({
               ...prev,
               groups: list,
+              meta: data && data.meta && typeof data.meta === 'object' ? data.meta : prev.meta,
               tab: prev.tab === null && list.length > 0 ? list[0].id : prev.tab,
             }))
           })
@@ -359,11 +451,40 @@ window.__ModuleLoader__.load({
 
       React.useEffect(() => { loadCatalog() }, [loadCatalog])
 
-      const onTab = (id) => setState(prev => ({ ...prev, tab: id }))
+      const onTab = (id) => setState(prev => ({ ...prev, tab: id, pendingDelete: null }))
 
       const onPick = (key) => setState(prev => ({
-        ...prev, selectedKey: key, uploadedName: null, error: null, result: null,
+        ...prev, selectedKey: key, uploadedName: null, pendingDelete: null, error: null, result: null,
       }))
+
+      // Two-tap delete: first tap arms this tile, second tap fires the request.
+      const onDelete = (key, presetId) => {
+        if (state.pendingDelete !== key) {
+          setState(prev => ({ ...prev, pendingDelete: key, error: null, result: null }))
+          return
+        }
+        setState(prev => ({ ...prev, pendingDelete: null, busy: true, error: null, result: null }))
+        fetch(ICONIC_CUSTOM_DELETE_ROUTE, {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ preset: presetId }),
+        })
+          .then(readJson, () => { throw new Error('网络错误') })
+          .then(() => {
+            setState(prev => ({
+              ...prev,
+              busy: false,
+              error: null,
+              result: '已删除该自定义图标',
+              selectedKey: prev.selectedKey === key ? null : prev.selectedKey,
+            }))
+            loadCatalog()
+          })
+          .catch((cause) => {
+            setState(prev => ({ ...prev, busy: false, error: `删除失败：${cause.message}` }))
+          })
+      }
       const onChooseFile = (file) => {
         if (!file) return
         if (file.size > MAX_UPLOAD_BASE64) {
@@ -425,6 +546,7 @@ window.__ModuleLoader__.load({
         frames,
         onPick,
         onTab,
+        onDelete,
         onChooseFile,
         onInstall,
       }

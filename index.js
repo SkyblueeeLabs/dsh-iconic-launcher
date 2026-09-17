@@ -19,12 +19,13 @@ import fs from 'node:fs'
  */
 import { mkdir, readdir, rm, writeFile } from 'node:fs/promises'
 import { createHash } from 'node:crypto'
-import { join, isAbsolute, dirname } from 'node:path'
+import { join, isAbsolute, dirname, resolve, sep } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { homedir } from 'node:os'
 import z from '@deepseek-ai/schemastery'
 import {
-  ICONIC_PRESETS_ROUTE, ICONIC_INSTALL_ROUTE, ICONIC_ICON_ROUTE_PREFIX,
-  ICON_SIZES, slugify,
+  ICONIC_PRESETS_ROUTE, ICONIC_INSTALL_ROUTE, ICONIC_CUSTOM_DELETE_ROUTE,
+  ICONIC_ICON_ROUTE_PREFIX, ICON_SIZES, slugify,
 } from './shared.js'
 import { PRESET_GROUPS, findPreset, loadPresetIco, listCustomPresets, loadIconFile } from './presets.js'
 import { buildIco, isPng } from './ico.js'
@@ -35,6 +36,26 @@ import { ICONIC_NS } from './shared.js'
 export const name = 'dsh-iconic-launcher'
 /** Route carrier, the trust fence guarding every route, and command spawns. */
 export const inject = ['webServer', 'connection', 'subprocess']
+
+/**
+ * Self-describing project metadata, read from this package's OWN package.json at
+ * load time. Serving it through the presets route (rather than hardcoding a
+ * version in the browser) makes the settings footer always print the version
+ * actually installed under the profile's node_modules — no source/client drift.
+ */
+const PLUGIN_META = (() => {
+  try {
+    const pkg = JSON.parse(fs.readFileSync(
+      join(dirname(fileURLToPath(import.meta.url)), 'package.json'), 'utf8'))
+    return Object.freeze({
+      name: String(pkg.name ?? ''),
+      version: String(pkg.version ?? ''),
+      homepage: String(pkg.homepage ?? ''),
+    })
+  } catch {
+    return Object.freeze({ name: name, version: '', homepage: '' })
+  }
+})()
 
 const nonEmpty = () => z.string().min(1)
 
@@ -285,7 +306,7 @@ export function apply(ctx, config) {
         // user uploaded shows up newest-first, and an empty directory just
         // leaves the tab with its add-placeholder.
         const custom = await listCustomPresets(customDir)
-        sendJson(res, 200, { groups: [...PRESET_GROUPS, custom], iconDir: config.iconDir })
+        sendJson(res, 200, { groups: [...PRESET_GROUPS, custom], iconDir: config.iconDir, meta: PLUGIN_META })
       },
     }),
   `iconic: GET ${ICONIC_PRESETS_ROUTE}`)
@@ -427,4 +448,60 @@ export function apply(ctx, config) {
       },
     }),
   `iconic: POST ${ICONIC_INSTALL_ROUTE}`)
+
+  // Delete route: removes ONE user-uploaded custom icon file. It is the only
+  // destructive path in the plugin, so the guard is tight — a single safe path
+  // segment, a `.ico` that must resolve strictly inside customDir, and the same
+  // trust fence every other route passes through. Shipped presets are never
+  // addressable here (they live under the read-only assets tree, not customDir).
+  ctx.effect(() =>
+    ctx.webServer.register({
+      kind: 'exact',
+      path: ICONIC_CUSTOM_DELETE_ROUTE,
+      handler: async (req, res) => {
+        if (rejected(req, res)) return
+        if (req.method !== 'POST') {
+          sendMethodNotAllowed(res, 'POST')
+          return
+        }
+        const essence = String(req.headers['content-type']).split(';', 1)[0]?.trim().toLowerCase()
+        if (essence !== 'application/json') {
+          sendJson(res, 415, { code: 'unsupported-media-type', message: 'content-type must be application/json' })
+          return
+        }
+        let text
+        try {
+          text = await readBoundedBody(req, 4096)
+        } catch {
+          sendJson(res, 400, { code: 'bad-request', message: 'request body unreadable' })
+          return
+        }
+        if (text === null) {
+          sendJson(res, 413, { code: 'payload-too-large', message: 'request body is too large' })
+          return
+        }
+        const body = parseInstallBody(text)
+        const presetId = body && typeof body.preset === 'string' ? body.preset : null
+        if (presetId === null || !/^[A-Za-z0-9._-]+$/.test(presetId) || /^\.+$/.test(presetId)) {
+          sendJson(res, 400, { code: 'bad-request', message: 'custom icon id is missing or unsafe' })
+          return
+        }
+        // Belt-and-suspenders: the id regex already forbids '/', but re-derive
+        // the absolute target and require it to sit strictly inside customDir.
+        const root = resolve(customDir) + sep
+        const target = resolve(join(customDir, `${presetId}.ico`))
+        if (!target.startsWith(root)) {
+          sendJson(res, 400, { code: 'bad-request', message: 'custom icon id escapes the custom directory' })
+          return
+        }
+        try {
+          await rm(target, { force: true })
+        } catch {
+          sendJson(res, 500, { code: 'custom-delete', message: 'could not delete the custom icon' })
+          return
+        }
+        sendJson(res, 200, { ok: true, deleted: presetId })
+      },
+    }),
+  `iconic: POST ${ICONIC_CUSTOM_DELETE_ROUTE}`)
 }

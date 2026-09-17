@@ -1,7 +1,12 @@
 {
   "name": "dsh-iconic-launcher",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Custom desktop icon launcher: preset icons plus arbitrary-image to .ico desktop-shortcut creation, with a hosted settings card (host + browser halves)",
+  "homepage": "https://github.com/SkyblueeeLabs/dsh-iconic-launcher",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SkyblueeeLabs/dsh-iconic-launcher.git"
+  },
   "private": true,
   "type": "module",
   "main": "index.js",

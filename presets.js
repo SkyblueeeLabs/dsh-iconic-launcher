@@ -2,8 +2,10 @@
  * Built-in preset icon catalog for the launcher plugin (host-side).
  *
  * Presets are grouped so the settings picker renders one labelled section per
- * source batch: the shipped `dsh-brand` default first, then the two graded
- * batches converted from `data/1` and `data/2`.
+ * source batch: the shipped `dsh-brand` default first, then the three graded
+ * batches converted from `data/1` (lightblue), `data/2` (deep purple) and
+ * `data/3` (mixed). The assets folders (`lightblue/`, `deepblue/`, `mixed/`)
+ * mirror those batches one-for-one now that mixed is its own tab.
  *
  * Every icon is a finished multi-size `.ico` produced offline by
  * `scripts/convert-png-to-ico.mjs` (batch) or `scripts/convert-svg-to-ico.mjs`
@@ -48,7 +50,8 @@ const GROUP_1 = [
   'whalechan-icon-13', 'whalechan-icon-14', 'whalechan-icon-15', 'whalechan-icon-16',
 ]
 
-/** Batch 2 — `data/2`, two styles sharing one group. */
+/** Batch 2/3 — the `data/2` deep-purple style and the `data/3` mixed style,
+ *  each now its own tab (they shared one group before the split). */
 const GROUP_2_PURPLE = [
   'whalechan-deep-purple-01', 'whalechan-deep-purple-02', 'whalechan-deep-purple-03',
   'whalechan-deep-purple-04', 'whalechan-deep-purple-05', 'whalechan-deep-purple-06',

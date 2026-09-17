@@ -9,14 +9,16 @@ PNG，插件自动**去白底、切多尺寸 ICO**，然后**一键写入桌面�
 
 - 插件 id / npm name：`dsh-iconic-launcher`（仓库根就是包根，**可以** `dsh plugin add github:SkyblueeeLabs/dsh-iconic-launcher`）
 - 界面显示名：`桌面图标`（client.js 的 settings.section label）
-- 素材源：`data/1`（浅蓝 16 张）、`data/2`（深紫 15 + 混搭 12 张）——约 300×300 PNG
+- 素材源：`data/1`（浅蓝 16 张）、`data/2`（深紫 15 张）、`data/3`（混搭 12 张）——约 300×300 PNG，
+  与 `presets/assets/{lightblue,deepblue,mixed}` 三个目录一一对应。（历史坑：拆 tab 后 `mixed/`
+  目录和 `data/3` 一度没建，混搭图标全留在 `deepblue/` 里 → 混搭 tab 404 裂图；已分离修复。）
 
 ## 架构（仓库根 = 包根）
 
 | 文件 | 角色 |
 |---|---|
-| `index.js` | host 半：cordis function-plugin，webServer 路由 + settings 命名空间注册 |
-| `client.js` | 浏览器半：**no-build**（`window.__ModuleLoader__.load({id, factory})` 形式，不能有顶层 import/export）|
+| `index.js` | host 半：cordis function-plugin，webServer 路由 + settings 命名空间注册；presets 接口附带读自自身 package.json 的 `{name,version,homepage}` meta |
+| `client.js` | 浏览器半：**no-build**（`window.__ModuleLoader__.load({id, factory})` 形式，不能有顶层 import/export）；卡片底部页脚显示项目主页链接 + `v版本`（取自 host meta，缺省回退内联常量 `PLUGIN_REPO_FALLBACK`/`PLUGIN_VERSION_FALLBACK`）|
 | `shared.js` | 前后端共享常量（路由前缀、ICON_SIZES 白名单、slugify）|
 | `presets.js` | 分组预设目录：`PRESET_GROUPS`（默认/浅蓝/深紫/混搭/自定义）+ 自定义目录扫描 |
 | `ico.js` | PNG → ICO 打包（ICONDIR + ICONDIRENTRY，payload 长度**必须 32 位写**）|
@@ -86,7 +88,13 @@ dsh plugin add --profile web C:\Users\admin\.dsh\iconic-pack\dsh-iconic-launcher
 1. **把 5 tabs 切换到本机 profile**（按上面流程，一次成功后再动日常 profile）
 2. **GitHub git 直装演练**：`dsh plugin add github:SkyblueeeLabs/dsh-iconic-launcher`
    （包已在仓库根，理论上可用，但需在空 profile 演练验证）
-3. **自定义图标的删除入口**（可选）：自定义 tab 目前只能添加不能删
+3. ~~**自定义图标的删除入口**~~ ✅ **已实现**：新增 `ICONIC_CUSTOM_DELETE_ROUTE`
+   （`/dsh-launcher-ic/custom-delete`，POST），host 侧在 `index.js` 注册——走同一信任围栏、
+   仅接受 `{ preset: <id> }`、id 必须匹配 `/^[A-Za-z0-9._-]+$/` 且非纯点、目标解析后必须严格落在
+   `customDir` 内，`rm(force)` 后返回 `{ ok:true }`。只删用户上传的自定义 `.ico`，出厂预设不可寻址。
+   client 侧每个自定义 tile 右上角一个 `×` 删除钮，**两次点击内联确认**（首次变 `✓` 红色 armed，再次
+   才真正删；刻意避开 `window.confirm`，嵌入式 webview 常吞掉模态）。删除后刷新目录、清掉对应选中。
+   ⚠️ 本机 profile 需按任务 1 的流程重装 tarball 才能拿到这个新能力。
 4. **旧提交里的 mojibake**：`8b28ead` 的 commit message 有编码坏字（历史遗留，不改历史）
 
 ## 换图标后桌面图标不刷新（Windows 图标缓存）
