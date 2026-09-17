@@ -3,3 +3,4 @@ node_modules/
 .DS_Store
 # local backup of superseded preset icons (kept out of the repo on purpose)
 data/_removed-presets/
+*.tgz
