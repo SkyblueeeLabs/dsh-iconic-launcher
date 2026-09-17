@@ -477,7 +477,7 @@ window.__ModuleLoader__.load({
         name: 'settings.section',
         id: 'iconic',
         order: 50,
-        label: () => 'dsh-iconic-launcher',
+        label: () => '桌面图标',
       }, IconicPanel))
       slots.inject('settings.plugin.item', () => slots.register(
         { name: 'settings.plugin.item', key: ICONIC_NS },

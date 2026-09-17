@@ -80,11 +80,13 @@ export const PRESET_GROUPS = Object.freeze([
   }),
   Object.freeze({
     id: 'deepblue',
-    name: '深蓝',
-    presets: Object.freeze([
-      ...GROUP_2_PURPLE.map(id => row('deepblue', id, `深紫 ${tail(id)}`)),
-      ...GROUP_2_VARIED.map(id => row('deepblue', id, `混搭 ${tail(id)}`)),
-    ]),
+    name: '深紫',
+    presets: Object.freeze(GROUP_2_PURPLE.map(id => row('deepblue', id, `深紫 ${tail(id)}`))),
+  }),
+  Object.freeze({
+    id: 'mixed',
+    name: '混搭',
+    presets: Object.freeze(GROUP_2_VARIED.map(id => row('mixed', id, `混搭 ${tail(id)}`))),
   }),
 ])
 

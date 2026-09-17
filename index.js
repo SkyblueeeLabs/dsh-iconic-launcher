@@ -1,3 +1,4 @@
+import fs from 'node:fs'
 /**
  * Host half of the custom desktop icon launcher ("万图皆 icon").
  *
