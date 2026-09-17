@@ -221,6 +221,17 @@ window.__ModuleLoader__.load({
 .ic-head-desc{font-size:12px;opacity:.72;margin:0;line-height:1.55}
 .ic-head-repo{color:var(--dsh-accent, #4a90d2);text-decoration:none;font-size:12px}
 .ic-head-repo:hover{text-decoration:underline}
+.ic-collapse{border:1px solid var(--dsh-border, rgba(128,128,128,.4));border-radius:10px;overflow:hidden}
+.ic-collapse-head{display:flex;align-items:center;gap:8px;width:100%;padding:10px 12px;
+  background:transparent;border:0;color:inherit;font:inherit;cursor:pointer;text-align:left;
+  transition:background .12s ease}
+.ic-collapse-head:hover{background:rgba(74,144,210,.06)}
+.ic-collapse-caret{width:16px;height:16px;flex:0 0 auto;opacity:.7;transition:transform .12s ease}
+.ic-collapse-head-open .ic-collapse-caret{transform:rotate(90deg)}
+.ic-collapse-title{font-size:13px;font-weight:600;flex:1;min-width:0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ic-collapse-hint{font-size:11px;opacity:.6;flex:0 0 auto}
+.ic-collapse-body{padding:12px}
 `
 
     /**
@@ -572,7 +583,38 @@ window.__ModuleLoader__.load({
      * the build step). Tagging the element `data-plugin` /
      * `data-plugin-css` is what the client's style bookkeeping expects.
      */
-    function IconicPanel() {
+    function IconicPanelBody() {
+      const card = useIconicCard()
+      return IconicCard(card)
+    }
+
+    /**
+     * Collapsed-by-default wrapper used only on the Plugins page's
+     * `settings.plugin.item` surface. It shows a single summary row (chevron +
+     * name + 展开配置); the full picker (and its catalog fetch) mounts only on
+     * first expand, so the plugin list stays compact like the official entries.
+     */
+    function IconicCollapsible() {
+      const [open, setOpen] = React.useState(false)
+      return React.createElement('div', { className: 'ic-collapse' },
+        React.createElement('button', {
+          type: 'button',
+          className: 'ic-collapse-head' + (open ? ' ic-collapse-head-open' : ''),
+          'aria-expanded': open ? 'true' : 'false',
+          onClick: () => setOpen(o => !o),
+        },
+        React.createElement('svg', {
+          className: 'ic-collapse-caret', viewBox: '0 0 24 24', fill: 'none',
+          stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round',
+          strokeLinejoin: 'round', 'aria-hidden': 'true',
+        }, React.createElement('path', { d: 'M9 6l6 6-6 6' })),
+        React.createElement('span', { className: 'ic-collapse-title' }, '万图皆 icon'),
+        React.createElement('span', { className: 'ic-collapse-hint' }, open ? '收起' : '展开配置')),
+        open ? React.createElement('div', { className: 'ic-collapse-body' },
+          React.createElement(IconicPanelBody, null)) : null)
+    }
+
+    function IconicPanel(props) {
       React.useEffect(() => {
         const el = document.createElement('style')
         el.setAttribute('data-plugin', 'dsh-iconic-launcher')
@@ -581,16 +623,23 @@ window.__ModuleLoader__.load({
         document.head.append(el)
         return () => { el.remove() }
       }, [])
-      const card = useIconicCard()
-      return IconicCard(card)
+      // variant 'plugin' → collapsed summary in the Plugins page; anything else
+      // (the top-level settings.section) → the full picker, unchanged.
+      const variant = props && props.variant
+      return variant === 'plugin'
+        ? React.createElement(IconicCollapsible, null)
+        : React.createElement(IconicPanelBody, null)
     }
 
     /**
      * Function-plugin body. The same widget is published on two surfaces:
      *   - `settings.section` — a first-class entry in the settings navigation,
-     *     a sibling of General / Models / Plugins / Plugin market;
+     *     a sibling of General / Models / Plugins / Plugin market; rendered
+     *     fully expanded (variant 'section').
      *   - `settings.plugin.item` — the plugin's own card on the Plugins page,
-     *     so the control is also reachable where users look for plugins.
+     *     so the control is also reachable where users look for plugins; rendered
+     *     collapsed-by-default as a summary row (variant 'plugin'), matching how
+     *     the official plugin list keeps each entry compact until expanded.
      */
     function apply(ctx) {
       const slots = ctx.get('slots')
@@ -600,10 +649,10 @@ window.__ModuleLoader__.load({
         id: 'iconic',
         order: 50,
         label: () => '桌面图标',
-      }, IconicPanel))
+      }, () => React.createElement(IconicPanel, { variant: 'section' })))
       slots.inject('settings.plugin.item', () => slots.register(
         { name: 'settings.plugin.item', key: ICONIC_NS },
-        IconicPanel,
+        () => React.createElement(IconicPanel, { variant: 'plugin' }),
       ))
     }
 
