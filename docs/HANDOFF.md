@@ -64,7 +64,7 @@ npm pack   # 产出 dsh-iconic-launcher-<version>.tgz
 Move-Item .\dsh-iconic-launcher-*.tgz C:\Users\admin\.dsh\iconic-pack\ -Force
 # 3. 停 web（先杀 3080 的 node 进程）
 # 4. 安装（官方命令，pnpm add tarball 转发）
-dsh plugin add --profile web C:\Users\admin\.dsh\iconic-pack\dsh-iconic-launcher-<version>.tgz
+dsh plugin --profile web add C:\Users\admin\.dsh\iconic-pack\dsh-iconic-launcher-<version>.tgz
 # 5. 迁移配置：profile 的 cordis.patch.yml 里，插件行 id 改为 dsh-iconic-launcher
 #    （config 值 targetExecutable/targetArguments/shortcutName/allowUpload 保持）
 # 6. 重启 web，验证：设置导航出现「桌面图标」、5 个 tab、图标缩略图加载

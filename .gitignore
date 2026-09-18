@@ -4,3 +4,5 @@ node_modules/
 # local backup of superseded preset icons (kept out of the repo on purpose)
 data/_removed-presets/
 *.tgz
+# WorkBuddy workspace memory (not part of the plugin package)
+.workbuddy/

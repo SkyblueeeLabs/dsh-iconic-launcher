@@ -52,10 +52,10 @@ Installs straight from source (the plugin has no build step). / 直接从源码�
 (插件无构建步骤),插件市场走的就是这条。
 
 ```powershell
-dsh plugin add --profile <name> github:SkyblueeeLabs/dsh-iconic-launcher
+dsh plugin --profile <name> add github:SkyblueeeLabs/dsh-iconic-launcher
 
 # Pin a release instead of tracking the default branch:
-dsh plugin add --profile <name> github:SkyblueeeLabs/dsh-iconic-launcher#v0.1.1
+dsh plugin --profile <name> add github:SkyblueeeLabs/dsh-iconic-launcher#v0.1.1
 ```
 
 **B. From a prebuilt tarball — offline / air-gapped.**
@@ -64,7 +64,7 @@ build your own with `npm pack` in a clone, then point `dsh` at the file. /
 从 GitHub **Releases** 下载 `.tgz`,或在克隆里 `npm pack` 自己产出,再指向该文件。
 
 ```powershell
-dsh plugin add --profile <name> C:\path\to\dsh-iconic-launcher-0.1.1.tgz
+dsh plugin --profile <name> add C:\path\to\dsh-iconic-launcher-0.1.1.tgz
 ```
 
 After installing, restart the web app (`dsh web`) and open
