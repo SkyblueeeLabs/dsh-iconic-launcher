@@ -41,6 +41,36 @@ Because it lives in its **own repository** (not inside the harness checkout),
 re-cloning the harness tree never wipes it: the moment you re-clone, you run
 `deploy.ps1` and the shortcut (and its icon) are back in seconds.
 
+## Install / 安装
+
+Needs a working **DeepSeek Harness** with the `dsh` CLI. The repo root **is** the
+plugin package, so either method installs the same thing. / 需要已装好
+**DeepSeek Harness** 并有 `dsh` 命令。仓库根就是插件包,两种方式装的是同一个东西。
+
+**A. From GitHub — recommended; this is what the plugin market uses.**
+Installs straight from source (the plugin has no build step). / 直接从源码安装
+(插件无构建步骤),插件市场走的就是这条。
+
+```powershell
+dsh plugin add --profile <name> github:SkyblueeeLabs/dsh-iconic-launcher
+
+# Pin a release instead of tracking the default branch:
+dsh plugin add --profile <name> github:SkyblueeeLabs/dsh-iconic-launcher#v0.1.1
+```
+
+**B. From a prebuilt tarball — offline / air-gapped.**
+Get `dsh-iconic-launcher-<version>.tgz` from the GitHub **Releases** page, or
+build your own with `npm pack` in a clone, then point `dsh` at the file. /
+从 GitHub **Releases** 下载 `.tgz`,或在克隆里 `npm pack` 自己产出,再指向该文件。
+
+```powershell
+dsh plugin add --profile <name> C:\path\to\dsh-iconic-launcher-0.1.1.tgz
+```
+
+After installing, restart the web app (`dsh web`) and open
+**设置 → 桌面图标** (or **插件 → 插件配置**) to pick or upload a desktop icon.
+/ 装完重启 `dsh web`,在 **设置 → 桌面图标**(或 **插件 → 插件配置**)里选图 / 上传。
+
 ## Layout
 
 | Path | Purpose |
@@ -80,16 +110,12 @@ powershell -ExecutionPolicy Bypass -File ./scripts/create-desktop-shortcut.ps1
 
 ### Custom desktop shortcut icon plugin (web UI)
 
-The repo root **is** the plugin package (`dsh-iconic-launcher`) — install it with:
-
-```powershell
-dsh plugin --profile <name> add github:SkyblueeeLabs/dsh-iconic-launcher
-```
-
-It adds a "pick or upload a desktop shortcut icon" capability that runs inside
-the DeepSeek Harness web app. See [`docs/plugin.md`](docs/plugin.md) for routes,
-config, and current status. The `scripts/` and `data/` folders are development
-tooling and source material — they are not part of the installed package.
+The plugin adds a "pick or upload a desktop shortcut icon" capability that runs
+inside the DeepSeek Harness web app. Install it either way shown in
+[**Install / 安装**](#install--安装) above. See [`docs/plugin.md`](docs/plugin.md)
+for routes, config, and current status. The `scripts/` and `data/` folders are
+development tooling and source material — they are not part of the installed
+package.
 
 ## Requirements
 
