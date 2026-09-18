@@ -43,6 +43,9 @@ re-cloning the harness tree never wipes it: the moment you re-clone, you run
 
 ## Install / 安装
 
+> **Platform / 平台**：Windows only（快捷方式依赖 Windows 的 `.lnk` / PowerShell）。macOS / Linux
+> 上插件可安装，但"写入桌面快捷方式"一项不可用。当前仅支持 Windows 系统。
+
 Needs a working **DeepSeek Harness** with the `dsh` CLI. The repo root **is** the
 plugin package, so either method installs the same thing. / 需要已装好
 **DeepSeek Harness** 并有 `dsh` 命令。仓库根就是插件包,两种方式装的是同一个东西。
@@ -119,7 +122,8 @@ package.
 
 ## Requirements
 
-- Windows 10/11, PowerShell 5.1+ (or PowerShell 7).
+- **Windows 10/11**（快捷方式 = `.lnk` + PowerShell，Windows only）。
+- PowerShell 5.1+ (or PowerShell 7).
 - Node.js on PATH (the launcher also probes `%ProgramFiles%\nodejs` and
   `%LOCALAPPDATA%\Programs\nodejs`; override with `DSH_NODE_DIR`).
 - `sharp` only if you need to rebuild the icon (optional).
