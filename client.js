@@ -152,43 +152,45 @@ window.__ModuleLoader__.load({
 
     /** The card's own CSS, inserted once per mounted half under `.ic-*` scope. */
     const CARD_CSS = `
-.ic-card{display:flex;flex-direction:column;gap:14px;padding:2px 0;max-width:660px}
-.ic-section-title{font-size:13px;font-weight:600;margin:0}
+.ic-card{display:flex;flex-direction:column;gap:14px;padding:2px 0;max-width:660px;color:var(--dsw-alias-label-primary)}
+.ic-section-title{font-size:13px;font-weight:600;margin:0;color:var(--dsw-alias-label-primary)}
 .ic-tabs{display:flex;gap:6px;flex-wrap:wrap}
-.ic-tab{border:1px solid var(--dsh-border, rgba(128,128,128,.4));border-radius:8px;
-  padding:6px 12px;cursor:pointer;font-size:12px;font:inherit;background:transparent;color:inherit;
-  transition:border-color .12s ease, background .12s ease}
-.ic-tab:hover:not(:disabled):not(.ic-tab-active){border-color:var(--dsh-accent, #4a90d2)}
-.ic-tab.ic-tab-active{background:var(--dsh-accent, #4d90d2);border-color:var(--dsh-accent, #4d90d2);color:#fff}
+.ic-tab{border:0.5px solid var(--dsw-alias-border-l4);border-radius:8px;
+  padding:6px 12px;cursor:pointer;font-size:12px;font:inherit;background:transparent;color:var(--dsw-alias-label-secondary);
+  transition:border-color .12s ease, background .12s ease, color .12s ease}
+.ic-tab:hover:not(:disabled):not(.ic-tab-active){border-color:var(--dsw-alias-state-business-primary);color:var(--dsw-alias-label-primary)}
+.ic-tab.ic-tab-active{background:var(--dsw-alias-brand-primary);border-color:var(--dsw-alias-brand-primary);color:var(--dsw-alias-bg-layer-3)}
+.ic-tab:focus-visible{outline:2px solid var(--dsw-alias-state-business-primary);outline-offset:2px}
 .ic-tab:disabled{opacity:.5;cursor:default}
 .ic-group-count{font-size:11px;opacity:.7;margin-left:3px}
 .ic-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-rows:1fr;
   gap:8px}
 .ic-tile{display:flex !important;flex-direction:column !important;align-items:center;justify-content:flex-start;
   gap:6px;padding:10px 6px;min-height:78px;text-align:center;position:relative;
-  border:1px solid var(--dsh-border, rgba(128,128,128,.4));border-radius:10px;
-  cursor:pointer;background:transparent;color:inherit;font:inherit;
+  border:0.5px solid var(--dsw-alias-border-l4);border-radius:10px;
+  cursor:pointer;background:transparent;color:var(--dsw-alias-label-secondary);font:inherit;
   transition:border-color .12s ease, background .12s ease}
-.ic-tile:hover:not(.ic-tile-disabled){border-color:var(--dsh-accent, #4a90d2)}
-.ic-tile.ic-selected{border-color:var(--dsh-accent, #4a90d2);background:rgba(74,144,210,.12)}
+.ic-tile:hover:not(.ic-tile-disabled){border-color:var(--dsw-alias-state-business-primary)}
+.ic-tile.ic-selected{border-color:var(--dsw-alias-state-business-primary);background:color-mix(in srgb, var(--dsw-alias-state-business-primary) 12%, transparent);color:var(--dsw-alias-label-primary)}
+.ic-tile:focus-visible{outline:2px solid var(--dsw-alias-state-business-primary);outline-offset:1px}
 .ic-tile-disabled{opacity:.5;cursor:default}
 .ic-thumb{width:36px;height:36px;display:block;flex:0 0 auto}
 .ic-name{font-size:11px;line-height:1.25;word-break:break-word}
 .ic-tile-del{position:absolute;top:5px;right:5px;width:19px;height:19px;padding:0;
   display:flex;align-items:center;justify-content:center;line-height:1;font-size:14px;
-  border:1px solid var(--dsh-border, rgba(128,128,128,.4));border-radius:50%;
-  background:var(--dsh-surface, rgba(128,128,128,.14));color:inherit;cursor:pointer;opacity:.55;
+  border:0.5px solid var(--dsw-alias-border-l4);border-radius:50%;
+  background:color-mix(in srgb, var(--dsw-alias-label-primary) 8%, transparent);color:var(--dsw-alias-label-secondary);cursor:pointer;opacity:.55;
   transition:opacity .12s ease, border-color .12s ease, color .12s ease, background .12s ease}
 .ic-tile:hover .ic-tile-del,.ic-tile.ic-selected .ic-tile-del{opacity:1}
-.ic-tile-del:hover{border-color:var(--dsh-danger, #d43545);color:var(--dsh-danger, #d43545)}
-.ic-tile-del.ic-tile-del-armed{opacity:1;background:var(--dsh-danger, #d43545);border-color:var(--dsh-danger, #d43545);color:#fff}
-.ic-hint{opacity:.6;font-size:12px;margin:0}
+.ic-tile-del:hover{border-color:var(--dsw-alias-state-error-primary);color:var(--dsw-alias-state-error-primary)}
+.ic-tile-del.ic-tile-del-armed{opacity:1;background:var(--dsw-alias-state-error-primary);border-color:var(--dsw-alias-state-error-primary);color:var(--dsw-alias-bg-layer-3)}
+.ic-hint{color:var(--dsw-alias-label-tertiary);font-size:12px;margin:0}
 .ic-add{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:3px;min-height:78px;padding:10px 6px;text-align:center;
-  border:1px dashed var(--dsh-border, rgba(128,128,128,.45));border-radius:10px;
-  cursor:pointer;color:inherit;
+  border:1px dashed var(--dsw-alias-border-l4);border-radius:10px;
+  cursor:pointer;color:var(--dsw-alias-label-secondary);
   transition:border-color .12s ease, background .12s ease}
-.ic-add:hover{border-color:var(--dsh-accent, #4a90d2);background:rgba(74,144,210,.06)}
+.ic-add:hover{border-color:var(--dsw-alias-state-business-primary);background:color-mix(in srgb, var(--dsw-alias-state-business-primary) 6%, transparent)}
 .ic-add input[type=file]{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
 .ic-add-plus{font-size:18px;line-height:1;opacity:.7}
 .ic-add-text{font-size:12px;font-weight:500}
@@ -196,42 +198,47 @@ window.__ModuleLoader__.load({
 .ic-add-hint{font-size:10px;opacity:.45}
 .ic-confirm{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:10px;
   padding:9px 10px 9px 12px;
-  border:1px solid var(--dsh-border, rgba(128,128,128,.4));border-radius:10px}
+  border:0.5px solid var(--dsw-alias-border-l4);border-radius:10px}
 .ic-confirm-slot{width:32px;display:flex;align-items:center;flex:0 0 auto}
 .ic-confirm-thumb{width:32px;height:32px;display:block}
-.ic-confirm-mid{min-width:0;text-align:center;font-size:13px;margin:0;
+.ic-confirm-mid{min-width:0;text-align:center;font-size:13px;margin:0;color:var(--dsw-alias-label-primary);
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ic-mid-ok{color:var(--dsh-success, #2f9e44);font-size:12px}
-.ic-mid-err{color:var(--dsh-danger, #d43545);font-size:12px}
+.ic-mid-ok{color:var(--dsw-alias-state-success-primary);font-size:12px}
+.ic-mid-err{color:var(--dsw-alias-state-error-primary);font-size:12px}
 .ic-confirm-name{font-size:13px}
-.ic-confirm-none{font-size:12px;opacity:.6}
+.ic-confirm-none{font-size:12px;color:var(--dsw-alias-label-tertiary)}
 .ic-actions{display:flex;flex-direction:column;align-items:flex-start;gap:6px}
-.ic-install{border:0;border-radius:8px;padding:7px 16px;cursor:pointer;font-size:12px;font-weight:500;
-  background:var(--dsh-accent, #4d90d2);color:#fff;flex:0 0 auto}
-.ic-install:disabled{opacity:.45;cursor:default}
-.ic-error{color:var(--dsh-danger, #d43545);font-size:12px;margin:0;word-break:break-all}
-.ic-ok{color:var(--dsh-success, #2f9e44);font-size:12px;margin:0;word-break:break-all}
+.ic-install{border:0;border-radius:8px;padding:7px 16px;cursor:pointer;font-size:12px;font-weight:500;font:inherit;
+  background:var(--dsw-alias-brand-primary);color:var(--dsw-alias-bg-layer-3);flex:0 0 auto}
+.ic-install:hover:not(:disabled){opacity:.9}
+.ic-install:focus-visible{outline:2px solid var(--dsw-alias-state-business-primary);outline-offset:1px}
+.ic-install:disabled{opacity:.4;cursor:default}
+.ic-error{color:var(--dsw-alias-state-error-primary);font-size:12px;margin:0;word-break:break-all}
+.ic-ok{color:var(--dsw-alias-state-success-primary);font-size:12px;margin:0;word-break:break-all}
 .ic-head{display:flex;flex-direction:column;gap:6px;padding-bottom:12px;
-  border-bottom:1px solid var(--dsh-border, rgba(128,128,128,.25))}
+  border-bottom:0.5px solid var(--dsw-alias-border-l2)}
 .ic-head-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.ic-head-icon{width:18px;height:18px;flex:0 0 auto;opacity:.85;color:var(--dsh-accent, #4a90d2)}
-.ic-head-name{font-size:15px;font-weight:700}
-.ic-head-sub{display:inline-flex;align-items:baseline;gap:6px;font-size:12px;opacity:.6}
+.ic-head-icon{width:18px;height:18px;flex:0 0 auto;opacity:.85;color:var(--dsw-alias-state-business-primary)}
+.ic-head-name{font-size:15px;font-weight:700;color:var(--dsw-alias-label-primary)}
+.ic-head-sub{display:inline-flex;align-items:baseline;gap:6px;font-size:12px;color:var(--dsw-alias-label-tertiary)}
 .ic-head-ver{font-variant-numeric:tabular-nums}
-.ic-head-desc{font-size:12px;opacity:.72;margin:0;line-height:1.55}
-.ic-head-repo{color:var(--dsh-accent, #4a90d2);text-decoration:none;font-size:12px}
+.ic-head-desc{font-size:12px;color:var(--dsw-alias-label-tertiary);margin:0;line-height:1.55}
+.ic-head-repo{color:var(--dsw-alias-state-business-primary);text-decoration:none;font-size:12px}
 .ic-head-repo:hover{text-decoration:underline}
-.ic-collapse{border:1px solid var(--dsh-border, rgba(128,128,128,.4));border-radius:10px;overflow:hidden}
-.ic-collapse-head{display:flex;align-items:center;gap:8px;width:100%;padding:10px 12px;
-  background:transparent;border:0;color:inherit;font:inherit;cursor:pointer;text-align:left;
-  transition:background .12s ease}
-.ic-collapse-head:hover{background:rgba(74,144,210,.06)}
-.ic-collapse-caret{width:16px;height:16px;flex:0 0 auto;opacity:.7;transition:transform .12s ease}
-.ic-collapse-head-open .ic-collapse-caret{transform:rotate(90deg)}
-.ic-collapse-title{font-size:13px;font-weight:600;flex:1;min-width:0;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ic-collapse-hint{font-size:11px;opacity:.6;flex:0 0 auto}
-.ic-collapse-body{padding:12px}
+/* Plugin-page collapsible card — mirrors the Host's PluginCard chrome. */
+.ic-collapse{list-style:none;border:0.5px solid var(--dsw-alias-border-l4);border-radius:16px;
+  background:var(--dsw-alias-bg-layer-3);transition:border-color .16s, background .16s}
+.ic-collapse:hover{border-color:var(--dsw-alias-label-dimmed)}
+.ic-collapse.ic-collapse-open{background:var(--dsw-alias-bg-layer-2);border-color:var(--dsw-alias-label-dimmed)}
+.ic-collapse-head{width:100%;appearance:none;border:0;background:none;font:inherit;color:inherit;text-align:left;
+  cursor:pointer;display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:12px}
+.ic-collapse-head:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:-2px}
+.ic-collapse-text{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.ic-collapse-name{font-size:15px;font-weight:600;line-height:1.4;color:var(--dsw-alias-label-primary)}
+.ic-collapse-desc{font-size:13px;line-height:1.5;color:var(--dsw-alias-label-tertiary)}
+.ic-collapse-chevron{flex:none;color:var(--dsw-alias-label-tertiary);transition:transform .16s}
+.ic-collapse-open .ic-collapse-chevron{transform:rotate(180deg)}
+.ic-collapse-body{border-top:0.5px solid var(--dsw-alias-border-l2);margin:0 16px;padding:12px 0 8px}
 `
 
     /**
@@ -596,20 +603,22 @@ window.__ModuleLoader__.load({
      */
     function IconicCollapsible() {
       const [open, setOpen] = React.useState(false)
-      return React.createElement('div', { className: 'ic-collapse' },
+      return React.createElement('li', { className: 'ic-collapse' + (open ? ' ic-collapse-open' : '') },
         React.createElement('button', {
           type: 'button',
-          className: 'ic-collapse-head' + (open ? ' ic-collapse-head-open' : ''),
-          'aria-expanded': open ? 'true' : 'false',
+          className: 'ic-collapse-head',
+          'aria-expanded': open,
           onClick: () => setOpen(o => !o),
         },
+        React.createElement('span', { className: 'ic-collapse-text' },
+          React.createElement('span', { className: 'ic-collapse-name' }, '万图皆 icon'),
+          React.createElement('span', { className: 'ic-collapse-desc' },
+            '选择或上传桌面快捷方式图标，自动去白底、切多尺寸，一键写入桌面。')),
         React.createElement('svg', {
-          className: 'ic-collapse-caret', viewBox: '0 0 24 24', fill: 'none',
-          stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round',
+          className: 'ic-collapse-chevron', width: 14, height: 14, viewBox: '0 0 24 24',
+          fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round',
           strokeLinejoin: 'round', 'aria-hidden': 'true',
-        }, React.createElement('path', { d: 'M9 6l6 6-6 6' })),
-        React.createElement('span', { className: 'ic-collapse-title' }, '万图皆 icon'),
-        React.createElement('span', { className: 'ic-collapse-hint' }, open ? '收起' : '展开配置')),
+        }, React.createElement('path', { d: 'M6 9l6 6 6-6' }))),
         open ? React.createElement('div', { className: 'ic-collapse-body' },
           React.createElement(IconicPanelBody, null)) : null)
     }
