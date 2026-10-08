@@ -66,17 +66,39 @@ on — the Plugins tab only renders cards for namespaces the Host describes.
 `index.js` registers it via `ctx.settings.register('dsh-launcher-icon', …)`
 inside `apply`, so a composition with a settings service serves it.
 
+## Desktop edition
+
+The plugin targets the **DeepSeek Harness desktop application** and nothing
+else. The Electron shell starts this host as a Node-mode child of the
+application's own executable, so the host resolves its own launcher at runtime
+(`process.execPath`, or `DSH_DESKTOP_NODE_EXECUTABLE` where the shell names it)
+and the shortcut launches the application directly — `cordis.patch.yml` carries
+no machine-specific executable path. Outside the desktop application the host
+resolves to no launcher, and the install route refuses with `no-target` rather
+than writing a link to nowhere.
+
+`shortcutName` deliberately matches the application's own desktop shortcut, so
+installing an icon customises that shortcut instead of leaving two competing
+"DeepSeek Harness" entries. An application update reinstates the stock shortcut
+(the installer recreates it) — re-run the install to put the icon back.
+
 ## Config (`cordis.patch.yml`)
 
 | Field | Default | Meaning |
 |-------|---------|---------|
 | `shortcutName` | `DeepSeek Launcher` | base name (no extension) of the `.lnk` |
-| `targetExecutable` | *(required)* | absolute exe/command the shortcut launches |
+| `targetExecutable` | *(the hosting desktop app)* | absolute exe the shortcut launches; set only to override |
 | `targetArguments` | `''` | args placed on the shortcut target |
-| `workingDirectory` | *(desktop dir)* | shortcut working folder |
+| `workingDirectory` | *(the target's own directory)* | shortcut working folder |
 | `iconDir` | `%USERPROFILE%\.dsh-launcher\icons` | where chosen icons are written |
 | `desktopDir` | `%USERPROFILE%\Desktop` | where the `.lnk` is created |
 | `allowUpload` | `true` | allow uploads, or presets only |
+
+Every value reaches `shortcut.ps1` as a **named** parameter. PowerShell's `-File`
+binder reads a bare argument starting with `-` as a parameter *name*, so a
+positional `-NoProfile …` value fails with
+`A parameter cannot be found that matches parameter name …` and exit 1 before
+anything is written.
 
 ## Install
 
@@ -106,10 +128,11 @@ profile).
 - ✅ Host routes + settings namespace + preset catalog + upload→`Ico` + `.lnk` write.
 - ✅ Browser settings card (milestone 2): preset picker + PNG upload form calling
   the two routes via `fetch`, mounted in `settings.plugin.item`.
+- ✅ Desktop edition: the shortcut launches the hosting desktop application,
+  resolved at runtime, with the chosen icon.
 - ⏭ Non-PNG uploads (JPEG/WebP) need a rasterizer (`sharp`) at the host runtime.
-- ⏭ Full end-to-end render against a running harness: the browser half is verified
-  to parse and load as a browser module and to register the card; a live render
-  + desktop-shortcut write still needs a harness run on Windows.
+- ⏭ A live render of the card inside the desktop application has not been
+  screenshotted yet; the `.lnk` write itself is verified on Windows.
 
 ## License
 

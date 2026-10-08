@@ -30,6 +30,7 @@ import {
 import { PRESET_GROUPS, findPreset, loadPresetIco, listCustomPresets, loadIconFile } from './presets.js'
 import { buildIco, isPng } from './ico.js'
 import { writeShortcut } from './desktop.js'
+import { desktopLauncher } from './launcher.js'
 import { ICONIC_NS } from './shared.js'
 
 /** Cordis function-plugin name. */
@@ -63,16 +64,21 @@ const nonEmpty = () => z.string().min(1)
  * Configuration for the custom desktop icon launcher.
  * @typedef {object} Config
  * @property {string} shortcutName base name (no extension) of the produced .lnk
- * @property {string} targetExecutable absolute target executable the shortcut launches
+ * @property {string} [targetExecutable] absolute executable the shortcut
+ *   launches; empty means the desktop application hosting this plugin
  * @property {string} [targetArguments] command-line arguments on the shortcut target
  * @property {string} [workingDirectory] working directory the shortcut starts in
  * @property {string} iconDir absolute directory where chosen icons are written
+ * @property {string} [customDir] absolute directory for user-uploaded icons
  * @property {string} desktopDir absolute desktop directory for the .lnk
  * @property {boolean} [allowUpload] whether arbitrary image uploads are accepted
  */
 export const Config = z.object({
   shortcutName: nonEmpty().default('DeepSeek Launcher'),
-  targetExecutable: nonEmpty(),
+  // Empty means "whatever application is hosting this plugin" — `apply`
+  // resolves it, because that answer only exists at runtime and differs per
+  // machine. A literal value still wins when one is configured.
+  targetExecutable: z.string().default(''),
   targetArguments: z.string().default(''),
   workingDirectory: z.string().default(''),
   iconDir: nonEmpty().default(join(homedir(), '.dsh-launcher', 'icons')),
@@ -272,7 +278,12 @@ export function apply(ctx, config) {
     res.end()
     return true
   }
-  const workingDirectory = config.workingDirectory || config.desktopDir
+  // What the shortcut launches: the configured executable, else the desktop
+  // application hosting this plugin. The install route refuses to run when
+  // neither exists, so no machine-specific path has to live in the patch layer.
+  const targetExecutable = config.targetExecutable || desktopLauncher()
+  const workingDirectory = config.workingDirectory
+    || (targetExecutable === '' ? config.desktopDir : dirname(targetExecutable))
   // Uploaded icons persist here as full multi-size .ico files; the catalog
   // serves them under the `自定义` tab on every subsequent load.
   const customDir = config.customDir || join(config.iconDir, 'custom')
@@ -306,7 +317,16 @@ export function apply(ctx, config) {
         // user uploaded shows up newest-first, and an empty directory just
         // leaves the tab with its add-placeholder.
         const custom = await listCustomPresets(customDir)
-        sendJson(res, 200, { groups: [...PRESET_GROUPS, custom], iconDir: config.iconDir, meta: PLUGIN_META })
+        sendJson(res, 200, {
+          groups: [...PRESET_GROUPS, custom],
+          iconDir: config.iconDir,
+          // What an install would launch and what it would write, so the card
+          // can state the outcome before the user commits to it.
+          target: targetExecutable,
+          shortcutName: config.shortcutName,
+          desktopDir: config.desktopDir,
+          meta: PLUGIN_META,
+        })
       },
     }),
   `iconic: GET ${ICONIC_PRESETS_ROUTE}`)
@@ -387,6 +407,17 @@ export function apply(ctx, config) {
           sendJson(res, 400, { code: 'bad-request', message: 'shortcutName is invalid or unsafe' })
           return
         }
+        // Refuse before writing anything: a shortcut to nowhere is worse than
+        // no shortcut, and this is the one configuration error the desktop
+        // edition can still hit (installed outside the desktop app with no
+        // explicit targetExecutable).
+        if (targetExecutable === '') {
+          sendJson(res, 500, {
+            code: 'no-target',
+            message: 'no launch target: set targetExecutable, or install this plugin into the DeepSeek Harness desktop application',
+          })
+          return
+        }
         try {
           await ensureDir(config.iconDir)
         } catch {
@@ -433,7 +464,7 @@ export function apply(ctx, config) {
         try {
           await writeShortcut(ctx, {
             lnkPath,
-            targetExecutable: config.targetExecutable,
+            targetExecutable,
             arguments: config.targetArguments,
             workingDirectory,
             iconPath,

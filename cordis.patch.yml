@@ -1,9 +1,14 @@
+# Desktop edition only: the produced shortcut launches the DeepSeek Harness
+# desktop application itself, so no machine-specific executable path is
+# configured here — the host resolves its own launcher at runtime
+# (`process.execPath` inside the Electron Node-mode child the shell spawns).
+#
+# `shortcutName` deliberately matches the application's own desktop shortcut:
+# installing an icon then customises that shortcut instead of leaving two
+# competing "DeepSeek Harness" entries on the desktop.
 - insert:
     - id: dsh-iconic-launcher
       name: 'dsh-iconic-launcher'
       config:
         shortcutName: DeepSeek Harness
-        targetExecutable: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
-        targetArguments: >-
-          -NoProfile -NonInteractive -Command "dsh web"
         allowUpload: true

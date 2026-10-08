@@ -13,6 +13,35 @@ PNG，插件自动**去白底、切多尺寸 ICO**，然后**一键写入桌面�
   与 `presets/assets/{lightblue,deepblue,mixed}` 三个目录一一对应。（历史坑：拆 tab 后 `mixed/`
   目录和 `data/3` 一度没建，混搭图标全留在 `deepblue/` 里 → 混搭 tab 404 裂图；已分离修复。）
 
+## 目标形态：只服务桌面版（2026-10 共识）
+
+**插件只面向 deepseek-harness 官方桌面版（Electron 应用），不再为 `dsh web` 场景保留兼容。**
+
+- 快捷方式的**目标就是桌面应用本身**，不再是 `powershell -Command "dsh web"`。
+- 目标路径**运行期解析**，不写死在 `cordis.patch.yml`：桌面外壳以 `ELECTRON_RUN_AS_NODE=1`
+  和**应用自身的 exe**（`process.execPath`）spawn 这个 host 进程，所以 host 里的
+  `process.execPath` 就是启动器；外壳在另外一些启动路径上还会用
+  `DSH_DESKTOP_NODE_EXECUTABLE` 显式点名。解析逻辑在 `launcher.js`，有单测。
+- 不在桌面应用里运行时解析结果是 `''`，安装路由返回 `no-target`，**宁可失败也不写死链接**。
+- `shortcutName` 故意等于应用自带的桌面快捷方式名：安装图标 = **替换那个快捷方式的外观**，
+  而不是并排多出一个同名项。应用更新后安装器会重建自己的快捷方式，图标会丢，重装一次即可。
+  （桌面应用自身的 `app.asar` 里**没有任何** `CreateShortcut`/`IShellLink`/`.lnk` 字样，
+  所以只有安装器会在更新时碰快捷方式。）
+
+### 本形态真踩过的坑
+
+1. **`shortcut.ps1` 的实参必须具名传，不能位置传。** PowerShell 5.1 的 `-File` 绑定器把
+   **以 `-` 开头的裸参数当参数名**，于是 `targetArguments` 的 `-NoProfile …` 直接
+   `A parameter cannot be found that matches parameter name …` + exit 1 —— 脚本在任何路径被碰之前
+   就挂了，而图标文件已经写好，现场看起来很像"路径问题"。见 `desktop.js` 与
+   `test/desktop-argv.test.mjs`。
+2. **`dsh plugin --profile desktop …` 会被 CLI 拒绝**：报
+   `profile "desktop" is managed exclusively by the Electron application`。
+   desktop profile 只能走桌面应用自己的插件管理界面，或直接改
+   `~/.dsh/profiles/desktop/node_modules/<pkg>/` 下的文件。
+3. 桌面 host 的 `process.execPath` 是**应用 exe**（`ELECTRON_RUN_AS_NODE=1`），
+   `process.versions.electron` 也存在——这两点是在 host 内识别"我在桌面版里"的依据。
+
 ## 架构（仓库根 = 包根）
 
 | 文件 | 角色 |
@@ -22,7 +51,8 @@ PNG，插件自动**去白底、切多尺寸 ICO**，然后**一键写入桌面�
 | `shared.js` | 前后端共享常量（路由前缀、ICON_SIZES 白名单、slugify）|
 | `presets.js` | 分组预设目录：`PRESET_GROUPS`（默认/浅蓝/深紫/混搭/自定义）+ 自定义目录扫描 |
 | `ico.js` | PNG → ICO 打包（ICONDIR + ICONDIRENTRY，payload 长度**必须 32 位写**）|
-| `desktop.js` | 经 `ctx.subprocess` 调 PowerShell 写 .lnk（`-File` 传参，绝不用 `-Command`）|
+| `desktop.js` | 经 `ctx.subprocess` 调 PowerShell 写 .lnk（`-File` + **具名实参**，绝不用 `-Command`）|
+| `launcher.js` | 决定快捷方式启动谁：桌面 host 内解析出应用自身 exe，否则 `''`（纯函数，可单测）|
 | `shortcut.ps1` | 实际写 .lnk 的脚本（`SHChangeNotify` 通知 Explorer 刷新图标）|
 | `cordis.patch.yml` | bundle patch：insert 插件行（id/name/config）|
 | `scripts/` | 开发工具链（启动 bat、图标生成、PNG→ICO 批量转换），**不进 npm 包** |
