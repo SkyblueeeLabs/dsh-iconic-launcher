@@ -17,8 +17,16 @@ const SCRIPT_PATH = fileURLToPath(new URL('./shortcut.ps1', import.meta.url))
  * Uses `-File`, never `-Command`: Windows PowerShell 5.1 does not bind a
  * `-Command` script's trailing arguments to `$args` — it splices them into the
  * command text, so every value arrived empty and the write failed with exit 1.
- * `-File` binds them positionally, so the values stay argv and never become
- * code (no escaping question at all).
+ * `-File` binds them as argv, so the values never become code.
+ *
+ * Every value travels as a NAMED parameter (`-LnkPath …`), never positionally.
+ * PowerShell's `-File` binder inspects each bare argument and treats one that
+ * begins with `-` as a parameter NAME instead of a positional value, so the
+ * shipped `targetArguments` (`-NoProfile -NonInteractive -Command "dsh web"`)
+ * was rejected with `A parameter cannot be found that matches parameter name
+ * 'NoProfile …'` and exit 1 — the .lnk was never written. Binding a value to a
+ * declared parameter consumes it as that parameter's value, so a leading `-`
+ * is harmless.
  *
  * @param {object} deps
  * @param {import('@deepseek-ai/cordis').Context} deps.ctx - plugin context with
@@ -47,7 +55,11 @@ export async function writeShortcut(ctx, {
   const handle = ctx.subprocess.spawn({
     argv: [
       executable, '-NoProfile', '-NonInteractive', '-File', SCRIPT_PATH,
-      lnkPath, targetExecutable, workingDirectory, iconPath, args,
+      '-LnkPath', lnkPath,
+      '-TargetExecutable', targetExecutable,
+      '-WorkingDirectory', workingDirectory,
+      '-IconPath', iconPath,
+      '-ExtraArguments', args,
     ],
     cwd: process.cwd(),
     stdio: {
