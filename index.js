@@ -111,8 +111,6 @@ const MAX_FRAME_BYTES = 512 * 1024
 const MAX_INSTALL_BODY = ICON_SIZES.length * MAX_FRAME_BYTES * 1.4 + 8 * 1024
 
 /** @param {import('node:http').ServerResponse} res */
-/** @param {import('node:http').ServerResponse} res */
-/** @param {import('node:http').ServerResponse} res */
 function sendJson(res, status, payload) {
   res.statusCode = status
   res.setHeader('content-type', 'application/json; charset=utf-8')

@@ -38,13 +38,19 @@ window.__ModuleLoader__.load({
        presets `meta`, read from its own package.json; these only cover a
        pre-meta host or a failed field, so the footer is never blank. */
     const PLUGIN_REPO_FALLBACK = 'https://github.com/SkyblueeeLabs/dsh-iconic-launcher'
-    const PLUGIN_VERSION_FALLBACK = '0.1.1'
+    const PLUGIN_VERSION_FALLBACK = '0.1.2'
 
-    /** A PNG File as base64 with any data-URL prefix stripped. */
     /** Resolutions every icon carries, matching the host's ICO packing order. */
     const ICON_SIZES = [256, 128, 64, 48, 32, 24, 16]
     /** Channels may sit this far below 255 and still count as the white plate. */
     const BACKDROP_TOLERANCE = 24
+    /**
+     * Ceiling on the longest side of the worked canvas. Everything downstream is
+     * O(pixels) — the backdrop flood fill allocates a visited array the size of
+     * the frame — so a huge source would lock the tab. Oversized images are
+     * downscaled (never rejected): 1024 is 4× the largest emitted icon.
+     */
+    const MAX_SOURCE_SIDE = 1024
 
     /**
      * The browser twin of `convert-png-to-ico.mjs`'s `knockOutWhiteBackdrop`:
@@ -113,22 +119,52 @@ window.__ModuleLoader__.load({
     }
 
     /**
-     * Turn an uploaded PNG into the same shape a preset ships: the white
-     * backdrop knocked out from the border inward, then one PNG per
-     * ICON_SIZES entry. Everything runs on a canvas in the browser because the
-     * host process owns no rasterizer.
+     * Turn an uploaded image into the same shape a preset ships: the white
+     * backdrop knocked out from the border inward, then one PNG per ICON_SIZES
+     * entry. Everything runs on a canvas in the browser because the host process
+     * owns no rasterizer.
+     *
+     * ANY format the browser can decode is accepted (PNG / JPEG / WebP in
+     * practice): `createImageBitmap` does the decoding, and every emitted frame
+     * is re-encoded as PNG via `toDataURL('image/png')` regardless of the input
+     * format. That is why the host's `isPng` frame check still holds — it
+     * validates the PNGs this function produces, not the file the user picked.
+     *
      * @param {File} file
      * @returns {Promise<Array<{ size: number; data: string }>>} base64 PNG frames
      */
-    async function pngToFrames(file) {
-      const bitmap = await createImageBitmap(file)
-      // Square letterbox canvas — transparent padding, never white.
-      const side = Math.max(bitmap.width, bitmap.height)
+    async function imageToFrames(file) {
+      let bitmap
+      try {
+        bitmap = await createImageBitmap(file)
+      } catch {
+        // The browser refused to decode it: not an image, or a format this
+        // engine cannot rasterize (SVG, HEIC, animated-only, corrupted).
+        throw new Error('无法读取该图片（支持 PNG / JPEG / WebP）')
+      }
+      // Square letterbox canvas — transparent padding, never white. The LONGEST
+      // side is capped because everything downstream costs O(pixels): the
+      // backdrop flood fill allocates a per-pixel visited array, and an
+      // unbounded 8000×8000 source would freeze the tab. 1024 is 4× the largest
+      // emitted icon (256), so the artwork stays sharp after downscaling.
+      const longest = Math.max(bitmap.width, bitmap.height)
+      const scale = longest > MAX_SOURCE_SIDE ? MAX_SOURCE_SIDE / longest : 1
+      const side = Math.max(1, Math.round(longest * scale))
+      const drawWidth = Math.max(1, Math.round(bitmap.width * scale))
+      const drawHeight = Math.max(1, Math.round(bitmap.height * scale))
       const square = document.createElement('canvas')
       square.width = side
       square.height = side
       const sctx = square.getContext('2d', { willReadFrequently: true })
-      sctx.drawImage(bitmap, (side - bitmap.width) / 2, (side - bitmap.height) / 2)
+      sctx.imageSmoothingEnabled = true
+      sctx.imageSmoothingQuality = 'high'
+      sctx.drawImage(
+        bitmap,
+        Math.round((side - drawWidth) / 2),
+        Math.round((side - drawHeight) / 2),
+        drawWidth,
+        drawHeight,
+      )
       bitmap.close?.()
 
       const image = sctx.getImageData(0, 0, side, side)
@@ -330,13 +366,13 @@ window.__ModuleLoader__.load({
             },
             React.createElement('input', {
               type: 'file',
-              accept: 'image/png',
+              accept: 'image/png,image/jpeg,image/webp',
               disabled: busy,
               onChange: (event) => p.onChooseFile(event.target.files && event.target.files[0]),
             }),
             React.createElement('span', { className: 'ic-add-plus' }, '＋'),
             React.createElement('span', { className: 'ic-add-text' }, '添加图片'),
-            React.createElement('span', { className: 'ic-add-req' }, 'PNG · ≤ 1 MiB'),
+            React.createElement('span', { className: 'ic-add-req' }, 'PNG / JPEG / WebP · ≤ 1 MiB'),
             React.createElement('span', { className: 'ic-add-hint' }, '自动去白底，生成多尺寸'))
             : null,
           active.presets.map(preset => tile(active.id, preset)))
@@ -510,7 +546,7 @@ window.__ModuleLoader__.load({
           return
         }
         setState(prev => ({ ...prev, error: '处理中…', uploadedName: null, result: null }))
-        pngToFrames(file).then((encoded) => {
+        imageToFrames(file).then((encoded) => {
           setFrames(encoded)
           setState(prev => ({
             ...prev, uploadedName: file.name, selectedKey: null, error: null, result: null,

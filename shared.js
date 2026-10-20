@@ -48,6 +48,3 @@ export function slugify(name) {
  * entry here, and the host rejects any size outside this list.
  */
 export const ICON_SIZES = Object.freeze([256, 128, 64, 48, 32, 24, 16])
-
-/** Version of this shared wire contract. */
-export const ICONIC_VERSION = '0.1.1'
