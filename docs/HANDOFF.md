@@ -107,11 +107,10 @@ PNG，插件自动**去白底、切多尺寸 ICO**，然后**一键写入桌面�
   shortcut.ps1 / cordis.patch.yml / package.json 全部 hash 相同）。
 - 所以 **5 个 tab、自定义删除、设置导航里的「桌面图标」、卡片顶部「万图皆 icon」标题都是活的**，
   不是"已实现但没装到本机"。
-- ⚠️ **唯一的不一致在发布物**：tag `v0.1.1` 指向 `55a5694`（2026-09-18），比 `main`/HEAD `ed70407`
-  落后 **4 个提交**。GitHub Release v0.1.1 挂的 `dsh-iconic-launcher-0.1.1.tgz` 因此仍是**旧形态**
-  （其 `cordis.patch.yml` 目标是 `powershell.exe` + `-NoProfile -NonInteractive -Command "dsh web"`，
-  且**没有 `launcher.js`**）。下载那个 tarball 装上会得到老的 `dsh web` 行为。
-  从 GitHub 源装（`github:SkyblueeeLabs/...`）会解析 `main`，是新的。
+- ✅ **发布物已同步（2026-10-20 闭环）**：`v0.1.2`（commit `a61ed0e`）已推送并挂上
+  `dsh-iconic-launcher-0.1.2.tgz`（64 文件、44 图标），其 `cordis.patch.yml` 已是桌面形态。
+  `v0.1.1` 保持不可变（tag `55a5694`，旧 `dsh web` 形态、无 `launcher.js`），作为历史保留。
+  从 GitHub 源装（`github:SkyblueeeLabs/...`）解析 `main`，始终最新。
 
 ### 历史（已被取代，留作参考）
 
@@ -178,15 +177,17 @@ dsh plugin --profile web add C:\Users\admin\.dsh\iconic-pack\dsh-iconic-launcher
    `customDir` 内，`rm(force)` 后返回 `{ ok:true }`。只删用户上传的自定义 `.ico`，出厂预设不可寻址。
    client 侧每个自定义 tile 右上角一个 `×` 删除钮，**两次点击内联确认**（首次变 `✓` 红色 armed，再次
    才真正删；刻意避开 `window.confirm`，嵌入式 webview 常吞掉模态）。删除后刷新目录、清掉对应选中。
-4. **发 v0.1.2，让 Release tarball 与"只服务桌面版"的代码一致**：tag `v0.1.1`
-   （`55a5694`）落后 main 4 个提交，其 Release 附件仍是旧的 `dsh web` 形态且缺
-   `launcher.js`。**代码侧已完成**：`package.json` 版本已是 `0.1.2`，并补上了
-   原先声明却缺失的 6 个 `.d.ts`（`index`/`shared`/`ico`/`desktop`/`launcher`/`presets`），
-   删掉了 `files` 里匹配不到任何文件的 `presets/*.js`、`presets/*.d.ts` 两个 glob，
-   加了 `engines.node >= 20`。
-   **仍需手动执行的（本机 `.git` 不可写，沙箱拦截）**：`git add`/`commit` → `npm pack` →
-   重建 tag 与 Release。注意 tag 删除重建时 push 报 "already exists" 是误导性的
-   （tag 对象哈希每次都变），本地 `git tag -d` 与远端 `git push :refs/tags` 要**分开**执行。
+4. ~~**发 v0.1.2，让 Release tarball 与"只服务桌面版"的代码一致**~~ ✅ **已完成（2026-10-20）**：
+   tag `v0.1.1`（`55a5694`）落后 main 4 个提交、其 Release 附件仍是旧的 `dsh web` 形态且缺
+   `launcher.js`，已在 v0.1.2 闭环。已完成：`package.json` 版本 `0.1.2`，补上原先声明却缺失的
+   6 个 `.d.ts`（`index`/`shared`/`ico`/`desktop`/`launcher`/`presets`），删掉 `files` 里匹配不到
+   任何文件的 `presets/*.js`、`presets/*.d.ts` 两个 glob，加 `engines.node >= 20`。
+   **发布状态**：commit `a61ed0e` → tag `v0.1.2` 已推送 →
+   [Release v0.1.2](https://github.com/SkyblueeeLabs/dsh-iconic-launcher/releases/tag/v0.1.2)
+   已挂 `dsh-iconic-launcher-0.1.2.tgz`（64 文件、44 图标）。`v0.1.1` 保持不动（不可变）。
+   发布脚本 `scripts/release.ps1` 已入库，可复用于下个版本（版本号读自 `package.json`）。
+   ⚠️ 发布时踩的坑：`gh release create --notes <多行文本>` 会被 PowerShell 原生参数引用拆成多个
+   文件名参数而报 `CreateFile ... filename syntax is incorrect`；必须改用 `--notes-file`。
 5. ~~**非 PNG 上传（JPEG/WebP）**~~ ✅ **已实现（v0.1.2）**：**不需要 `sharp`**——这是原先的误判。
    浏览器侧 `createImageBitmap` 原生就能解码 PNG/JPEG/WebP，且每一帧都用
    `toDataURL('image/png')` 重新编码，所以 host 的 `ico.js isPng` 校验对象是**浏览器产出的 PNG 帧**，

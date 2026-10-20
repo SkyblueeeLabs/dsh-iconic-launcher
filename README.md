@@ -138,23 +138,17 @@ dsh plugin --profile desktop add …    # ✗ 会被拒绝
 
 `desktop` profile 由桌面客户端独占，CLI 会直接拒绝。**请走客户端自己的插件管理界面。**
 
-### ⚠️ Releases 里的 `.tgz` 比 `main` 旧
+### Releases 里的 `.tgz` 与 `main` 同步
 
-**已知问题，请先读这一段。** 已发布的 `v0.1.1` 产物（tag 指向 `55a5694`）比 `main` 落后 4 个
-提交，它仍然是**旧形态**：快捷方式的目标是 `powershell -Command "dsh web"`，而不是桌面客户端。
-因此：
+`v0.1.2` 起，GitHub **Releases** 上的 `.tgz` 与 `main` 的代码一致。离线安装用 Releases 里最新的
+`.tgz` 即可；从当前 clone 里 `npm pack` 产出的是同一个包。
 
-- **用 `github:SkyblueeeLabs/dsh-iconic-launcher`（解析 `main`）安装 = 当前形态。** 推荐。
-- **用 Release 里的 `dsh-iconic-launcher-0.1.1.tgz` 安装 = 旧形态**，写入的快捷方式会去跑已废弃的
-  `dsh web` 命令。
-- 需要离线包时，从**当前 clone** 里 `npm pack` 生成，才与代码一致。
-
-修复方式是发一个 `v0.1.2`。在此之前，离线安装请自行 `npm pack`。
-
-> **Known issue:** the published `v0.1.1` asset predates the desktop-only switch, so it writes a
-> shortcut that runs the retired `dsh web` command. Install from the git source to get current
-> behaviour; `npm pack` the current clone if you need an offline bundle. A `v0.1.2` release is
-> the pending fix.
+> **Historical note / 历史说明**：`v0.1.1` 的 tarball 早于"只服务桌面版"的改动，它的快捷方式目标
+> 仍是已废弃的 `powershell -Command "dsh web"`，且缺少 `launcher.js`。如果你还持有那个旧包，
+> 请升级到 `v0.1.2`。
+>
+> The `v0.1.1` asset predates the desktop-only switch and writes a shortcut that runs the
+> retired `dsh web` command. Upgrade to `v0.1.2`.
 
 ### 客户端更新会重置图标
 

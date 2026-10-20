@@ -202,13 +202,11 @@ For any other profile, or a git checkout:
 dsh plugin --profile <name> add github:SkyblueeeLabs/dsh-iconic-launcher
 ```
 
-A tarball works too (`npm pack` in the repo root, then add the resulting `.tgz`),
-with one caveat: **the published `v0.1.1` GitHub Release asset predates the
-desktop-only switch.** Tag `v0.1.1` points at `55a5694`, four commits behind
-`main`/`ed70407`, so that `.tgz` still ships the legacy
-`powershell -Command "dsh web"` target and contains no `launcher.js`. Pack from
-a current clone (`npm pack`) — or install from GitHub, which resolves `main` —
-to get the desktop-client behaviour.
+A tarball works too (`npm pack` in the repo root, then add the resulting `.tgz`).
+Since `v0.1.2` the published Release asset matches `main`; `v0.1.1` predates the
+desktop-only switch (tag `55a5694`, no `launcher.js`, legacy
+`powershell -Command "dsh web"` target) and should not be used. Installing from
+GitHub resolves `main` and is current by construction.
 
 Plain-JS bundle — **no build step** — so a `git` install loads it directly.
 The `dsh.client` declaration in `package.json` plus the `./client` export let the
@@ -250,8 +248,9 @@ present in the default Web profile).
 - ✅ Screenshots: five, one per tab — `assets/screenshots/1-default.png`,
   `2-lightblue.png`, `3-deep-purple.png`, `4-mixed.png`, `5-custom.png`, all
   listed in `screenshots.json`.
-- ✅ Tests: `node --test --test-isolation=none test/*.test.mjs` — 8 tests
-  passing (launcher resolution + named-argument binding for `shortcut.ps1`).
+- ✅ Tests: `node --test --test-isolation=none test/*.test.mjs` — 19 tests
+  passing (launcher resolution, named-argument binding for `shortcut.ps1`, the
+  ICO directory layout, and preset catalog integrity).
 - ✅ Uploads accept PNG / JPEG / WebP (v0.1.2); every frame is re-encoded to PNG
   browser-side, so no host-side rasterizer is needed. The worked canvas is
   capped at 1024 px on its longest side and oversized images are downscaled.

@@ -186,8 +186,15 @@ $notes = [System.IO.File]::ReadAllText($notesPath, [System.Text.UTF8Encoding]::n
 $notes = $notes.Replace('<version>', $Ver)
 if ([string]::IsNullOrWhiteSpace($notes)) { Die "release notes file is empty: $notesPath" }
 
-gh release create $Tag $tgz --repo $Remote --title "dsh-iconic-launcher $Tag" --notes $notes
-if ($LASTEXITCODE -ne 0) { Die "gh release create failed. main and tag are pushed; retry the gh command manually" }
+# Write notes to a temp file and use --notes-file. Passing the notes inline via
+# --notes runs into PowerShell/native-argument quoting: the multi-line body gets
+# split and reinterpreted as a filename ("CreateFile ... The filename, directory
+# name, or volume label syntax is incorrect").
+$notesTemp = Join-Path $env:TEMP "dsh-release-notes-$Ver.txt"
+[System.IO.File]::WriteAllText($notesTemp, $notes, (New-Object System.Text.UTF8Encoding($false)))
+
+gh release create $Tag $tgz --repo $Remote --title "dsh-iconic-launcher $Tag" --notes-file $notesTemp
+if ($LASTEXITCODE -ne 0) { Die "gh release create failed. main and tag are pushed; retry manually: gh release create $Tag <tgz> --repo $Remote --notes-file $notesTemp" }
 Ok 'Release created'
 
 # ---------------------------------------------------------------- 6. done
